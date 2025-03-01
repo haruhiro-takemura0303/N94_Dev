@@ -1,0 +1,7 @@
+C:\Users\taken\Works\ess\N94_Dev\MCXN947_Project\drivers/fsl_clock.h:1489:20:CLOCK_EnableClock	24	static
+C:\Users\taken\Works\ess\N94_Dev\MCXN947_Project\drivers/fsl_port.h:360:20:PORT_SetPinConfig	32	static
+../board/pin_mux.c:317:6:BOARD_InitBootPins	8	static
+../board/pin_mux.c:343:6:BOARD_InitDEBUG_UARTPins	16	static
+../board/pin_mux.c:417:6:BOARD_InitSWD_DEBUGPins	24	static
+../board/pin_mux.c:514:6:BOARD_InitLEDsPins	32	static
+../board/pin_mux.c:636:6:BOARD_InitBUTTONsPins	24	static

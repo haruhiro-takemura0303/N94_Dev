@@ -1,0 +1,7 @@
+C:\Users\taken\Works\ess\N94_Dev\MCXN947_Project\drivers/fsl_clock.h:1489:20:CLOCK_EnableClock	24	static
+../board/clock_config.c:53:6:BOARD_InitBootClocks	8	static
+../board/clock_config.c:90:6:BOARD_BootClockFRO12M	8	static
+../board/clock_config.c:137:6:BOARD_BootClockFROHF48M	8	static
+../board/clock_config.c:191:6:BOARD_BootClockFROHF144M	8	static
+../board/clock_config.c:250:6:BOARD_BootClockPLL150M	40	static
+../board/clock_config.c:322:6:BOARD_BootClockPLL100M	40	static

@@ -1,0 +1,49 @@
+!SESSION 2025-03-01 16:53:57.338 -----------------------------------------------
+eclipse.buildId=unknown
+java.version=17.0.9
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=ja_JP
+Command-line arguments:  -os win32 -ws win32 -arch x86_64
+
+!ENTRY com.nxp.mcuxpresso.core.datamodels 1 0 2025-03-01 16:54:32.215
+!MESSAGE Recreating part support. No part support available.
+
+!ENTRY org.eclipse.egit.ui 2 0 2025-03-01 16:54:37.294
+!MESSAGE Warning: The environment variable HOME is not set. The following directory will be used to store the Git
+user global configuration and to define the default location to store repositories: 'C:\Users\taken'. If this is
+not correct please set the HOME environment variable and restart Eclipse. Otherwise Git for Windows and
+EGit might behave differently since they see different configuration options.
+This warning can be switched off on the Team > Git > Confirmations and Warnings preference page.
+
+!ENTRY com.nxp.mcuxpresso.core.datamodels 1 0 2025-03-01 16:54:39.528
+!MESSAGE The device 'MCXN947' (version='1.0.0') from SDK 'SDK_2.x_FRDM-MCXN947' (version='24.12.00', build='epluginsite812 2025-01-14') will be installed.
+
+!ENTRY org.eclipse.cdt.core 1 0 2025-03-01 16:58:21.032
+!MESSAGE Indexed 'MCXN947_Project' (27 sources, 127 headers) in 14.1 sec: 11,367 declarations; 28,727 references; 14 unresolved inclusions; 203 syntax errors; 4,973 unresolved names (11%)
+
+!ENTRY com.crt.log 1 0 2025-03-01 16:58:54.171
+!MESSAGE Trying to connect to redlink server on port 3025.
+
+!ENTRY com.nxp.mcuxpresso.core.debug.support.linkserver 1 0 2025-03-01 16:58:54.203
+!MESSAGE RedlinkServer telnet session connected on port 3025->53941 @ 127.0.0.1
+
+!ENTRY [ERROR] [com.nxp.mcuxpresso.core.debug.support.linkserver] 0 0 2025-03-01 16:58:54.724
+!MESSAGE 0x11CEE325, CLI error: #0x11CEE325 (report to NXP)
+
+!ENTRY [ERROR] [com.nxp.mcuxpresso.core.debug.support.linkserver] 0 0 2025-03-01 16:59:03.058
+!MESSAGE 0x11CEE325, CLI error: #0x11CEE325 (report to NXP)
+
+!ENTRY com.crt.log 1 0 2025-03-01 16:59:06.032
+!MESSAGE Starting GDB server [ C:/nxp/LinkServer_24.12.21/binaries/crt_emu_cm_redlink, --server, :10989, -msg-port=53942, -g, -mi, -2, -pMCXN947, -vendor=NXP, --bootromstall, 0x50000040, --reset=, -ProbeHandle=1, -CoreIndex=0, -cache=disable, --flash-hashing, --flash-driver=, -x, C:/Users/taken/Works/ess/N94_Dev/MCXN947_Project/Debug, --flash-dir, C:/nxp/LinkServer_24.12.21/binaries/Flash, --flash-dir, C:/Users/taken/Works/ess/N94_Dev/.mcuxpressoide_packages_support/MCXN947_support/Flash, --telnet, 3330, --romstalldelay, 600 ]
+
+!ENTRY com.nxp.mcuxpresso.core.debug 1 0 2025-03-01 16:59:08.995
+!MESSAGE Telnet session connected on port 3330->53956 @ 127.0.0.1
+
+!ENTRY org.eclipse.core.resources 2 10035 2025-03-01 17:02:51.264
+!MESSAGE The workspace will exit with unsaved changes in this session.
+
+!ENTRY org.eclipse.core.jobs 2 2 2025-03-01 17:02:51.778
+!MESSAGE Job found still running after platform shutdown.  Jobs should be canceled by the plugin that scheduled them during shutdown: org.eclipse.cdt.internal.core.pdom.PDOMIndexerJob
+
+!ENTRY org.eclipse.core.jobs 2 2 2025-03-01 17:02:51.787
+!MESSAGE Job found still running after platform shutdown.  Jobs should be canceled by the plugin that scheduled them during shutdown: org.eclipse.cdt.dsf.gdb.internal.ui.console.GdbBasicCliConsole$InputReadJob

@@ -1,0 +1,11 @@
+16:59:00 **** Incremental Build of configuration Debug for project MCXN947_Project ****
+make -r -j16 all 
+make[1]: Nothing to be done for 'main-build'.
+Performing post-build steps
+arm-none-eabi-size "MCXN947_Project.axf"; # arm-none-eabi-objcopy -v -O binary "MCXN947_Project.axf" "MCXN947_Project.bin" ; # checksum -p MCXN947 -d "MCXN947_Project.bin";
+   text	   data	    bss	    dec	    hex	filename
+  13644	     12	   8740	  22396	   577c	MCXN947_Project.axf
+ 
+
+16:59:00 Build Finished. 0 errors, 0 warnings. (took 406ms)
+
