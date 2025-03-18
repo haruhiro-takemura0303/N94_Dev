@@ -1,0 +1,426 @@
+cbuild-run:
+  generated-by: csolution version 2.8.0
+  solution: n947_develop.csolution.yml
+  target-type: TZ_Disabled
+  compiler: AC6
+  device: NXP::MCXN947VDF
+  device-pack: NXP::MCXN947_DFP@19.0.0
+  programming:
+    - algorithm: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947/arm/MCXN9XX_2048.FLM
+      start: 0x00000000
+      size: 0x00200000
+      ram-start: 0x20000000
+      ram-size: 0x00001000
+      default: true
+      pname: cm33_core0
+    - algorithm: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947/arm/MCXN9XX_2048_S.FLM
+      start: 0x10000000
+      size: 0x00200000
+      ram-start: 0x20000000
+      ram-size: 0x00001000
+      default: true
+      pname: cm33_core0
+    - algorithm: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947/arm/MCXN9XX_W25Q64.FLM
+      start: 0x80000000
+      size: 0x00800000
+      ram-start: 0x20000000
+      ram-size: 0x00001000
+      default: true
+      pname: cm33_core0
+    - algorithm: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947/arm/MCXN9XX_W25Q64_S.FLM
+      start: 0x90000000
+      size: 0x00800000
+      ram-start: 0x20000000
+      ram-size: 0x00001000
+      default: true
+      pname: cm33_core0
+  system-descriptions:
+    - file: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947/MCXN947_cm33_core0.xml
+      type: svd
+      pname: cm33_core0
+  output:
+    - file: out/n947_develop/TZ_Disabled/n947_develop.axf
+      info: generate by n947_develop+TZ_Disabled
+      type: elf
+  system-resources:
+    memory:
+      - name: BootROM
+        access: rx
+        start: 0x03000000
+        size: 0x00040000
+        pname: cm33_core0
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: BootROM_alias
+        access: rx
+        start: 0x13000000
+        size: 0x00040000
+        pname: cm33_core0
+        alias: BootROM
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: PROGRAM_FLASH0
+        access: rx
+        start: 0x00000000
+        size: 0x00100000
+        default: true
+        startup: true
+        pname: cm33_core0
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: PROGRAM_FLASH1
+        access: rx
+        start: 0x00100000
+        size: 0x00100000
+        default: true
+        startup: true
+        pname: cm33_core0
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: PROGRAM_FLASH_alias0
+        access: rx
+        start: 0x10000000
+        size: 0x00100000
+        pname: cm33_core0
+        alias: PROGRAM_FLASH0
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: PROGRAM_FLASH_alias1
+        access: rx
+        start: 0x10100000
+        size: 0x00100000
+        pname: cm33_core0
+        alias: PROGRAM_FLASH1
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: SRAM
+        access: rw
+        start: 0x20000000
+        size: 0x00060000
+        default: true
+        pname: cm33_core0
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: SRAMH
+        access: rw
+        start: 0x20060000
+        size: 0x00008000
+        default: true
+        pname: cm33_core0
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: SRAMH_alias
+        access: rw
+        start: 0x30060000
+        size: 0x00008000
+        pname: cm33_core0
+        alias: SRAMH
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: SRAMX
+        access: rw
+        start: 0x04000000
+        size: 0x00018000
+        default: true
+        pname: cm33_core0
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: SRAMX_alias
+        access: rw
+        start: 0x14000000
+        size: 0x00018000
+        pname: cm33_core0
+        alias: SRAMX
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: SRAM_alias
+        access: rw
+        start: 0x30000000
+        size: 0x00060000
+        pname: cm33_core0
+        alias: SRAM
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: USB_RAM
+        access: rw
+        start: 0x400BA000
+        size: 0x00001000
+        default: true
+        pname: cm33_core0
+        from-pack: NXP::MCXN947_DFP@19.0.0
+      - name: USB_RAM_alias
+        access: rw
+        start: 0x500BA000
+        size: 0x00001000
+        pname: cm33_core0
+        alias: USB_RAM
+        from-pack: NXP::MCXN947_DFP@19.0.0
+  debugger:
+    - name: <default>
+      port: swd
+      clock: 5000000
+      dbgconf: RTE/Device/MCXN947VDF_cm33_core0/MCXN9XX.dbgconf
+  debug-vars:
+    vars: |
+      // Debug Access Variables, can be modified by user via copies of DBGCONF files as created by uVision. Also see sub-family level.
+      __var SWO_Pin               = 0;                    // Serial Wire Output pin: 0 = PIO0_10, 1 = PIO0_8
+      __var Dbg_CR                = 0x00000000;           // DBG_CR
+      __var BootTime              = 1000000;              // 1000 milliseconds
+  debug-sequences:
+    - name: ResetSystem
+      blocks:
+        - execute: |
+            Sequence("ResetSystemCore0");
+      pname: cm33_core0
+    - name: ResetProcessor
+      pname: cm33_core0
+    - name: EnableTraceClk
+      blocks:
+        - execute: |
+            __var SYSCON_NS_Base_Addr = 0x40000000;
+            __var IOCON_NS_Base_Addr  = 0x40001000;
+            __var TRACECLKSEL_Addr    = SYSCON_NS_Base_Addr + 0x268;
+            __var TRACECLKDIV_Addr    = SYSCON_NS_Base_Addr + 0x308;
+            __var AHBCLKCTRLSET0_Addr = IOCON_NS_Base_Addr  + 0x220;
+            __var clksel              = 0;
+            __var clkdiv              = 0;
+        - if: __traceout & 0x3
+          blocks:
+            - execute: |
+                clksel = Read32(TRACECLKSEL_Addr);  // Read current TRACECLKSEL value
+            - info: Trace (TPIU) Clock not selected?
+              if: clksel > 2
+              execute: |
+                Write32(TRACECLKSEL_Addr, 0x0);   // Select Trace divided clock
+            - execute: |
+                clkdiv = (Read32(TRACECLKDIV_Addr) & 0xFF);  // Read current TRACECLKDIV value, preserve divider but clear rest to enable
+                Write32(TRACECLKDIV_Addr, clkdiv);
+
+                Write32(AHBCLKCTRLSET0_Addr, (1 << 13));   // Enable IOCON clock
+      pname: cm33_core0
+    - name: EnableDebugMailbox
+      blocks:
+        - {}
+        - if: "!(ReadAP(0x0) & 0x40)"
+          execute: |
+            __var status=0x55aa;
+            Message(0, "MCX connect script start");
+
+            // Read APIDR
+            __dp = 0;
+            __ap = 2;
+            status = ReadAP(0xFC);
+            Message(0, "APIDR: 0x%08X", status);
+
+            // Read DPIDR
+            __dp = 0;
+            __ap = 2;
+            status = ReadDP(0x0);
+            Message(0, "DPIDR: 0x%08X", status);
+
+            // Active DebugMailbox
+            __dp = 0;
+            __ap = 2;
+            WriteAP(0x0, 0x00000021);
+            DAP_Delay(30000);
+            ReadAP(0x0);
+
+            // Enter Debug Session
+            __dp = 0;
+            __ap = 2;
+            WriteAP(0x4, 0x00000007);
+            DAP_Delay(30000);
+            ReadAP(0x0);
+
+            __dp = 0;
+            __ap = 0;
+
+            Message(0, "MCX connect script end");
+      pname: cm33_core0
+    - name: DebugPortStart
+      blocks:
+        - execute: |
+            __var SW_DP_ABORT  = 0x0;
+            __var DP_CTRL_STAT = 0x4;
+            __var DP_SELECT    = 0x8;
+            __var powered_down = 0;
+            // Switch to DP Register Bank 0
+            WriteDP(DP_SELECT, 0x00000000);
+
+            // Read DP CTRL/STAT Register and check if CSYSPWRUPACK and CDBGPWRUPACK bits are set
+            powered_down = ((ReadDP(DP_CTRL_STAT) & 0xA0000000) != 0xA0000000);
+        - if: powered_down
+          blocks:
+            - execute: |
+                // Request Debug/System Power-Up
+                WriteDP(DP_CTRL_STAT, 0x50000000);
+            - while: (ReadDP(DP_CTRL_STAT) & 0xA0000000) != 0xA0000000
+              timeout: 1000000
+            - if: (__protocol & 0xFFFF) == 1
+              execute: |
+                // Init AP Transfer Mode, Transaction Counter, and Lane Mask (Normal Transfer Mode, Include all Byte Lanes)
+                // Additionally clear STICKYORUN, STICKYCMP, and STICKYERR bits by writing '1'
+                WriteDP(DP_CTRL_STAT, 0x50000F32);
+
+                Sequence("EnableDebugMailbox");
+            - if: (__protocol & 0xFFFF) == 2
+              execute: |
+                // Init AP Transfer Mode, Transaction Counter, and Lane Mask (Normal Transfer Mode, Include all Byte Lanes)
+                WriteDP(DP_CTRL_STAT, 0x50000F00);
+
+                // Clear WDATAERR, STICKYORUN, STICKYCMP, and STICKYERR bits of CTRL/STAT Register by write to ABORT register
+                WriteDP(SW_DP_ABORT, 0x0000001E);
+
+                Sequence("EnableDebugMailbox");
+      pname: cm33_core0
+    - name: WaitForStopAfterReset
+      blocks:
+        - execute: |
+            __var SCS_Addr    = 0xE000E000;
+            __var DHCSR_Addr  = SCS_Addr + 0xDF0;
+            __var DFSR_Addr  = SCS_Addr + 0xD30;
+            DAP_Delay(100000);  // Give bootloader time to do what it needs to do
+            Sequence("EnableDebugMailbox");
+            Write32(DHCSR_Addr, 0xA05F0003);  // Halt the core in case it didn't stop at a breakpiont.
+            // Clear watch point
+            Write32(0xE0001020, 0x0);
+            Write32(0xE0001028, 0x0);
+            Write32(0xE0001030, 0x0);
+            Write32(0xE0001038, 0x0);
+            Write32(0xE0001040, 0x0);
+            Write32(0xE0001048, 0x0);
+            Write32(0xE0001050, 0x0);
+            Write32(0xE0001058, 0x0);
+
+            Write32(0xE0001060, 0x0);
+            Write32(0xE0001068, 0x0);
+            Write32(0xE0001070, 0x0);
+            Write32(0xE0001078, 0x0);
+            Write32(0xE0001080, 0x0);
+            Write32(0xE0001088, 0x0);
+            Write32(0xE0001090, 0x0);
+            Write32(0xE0001098, 0x0);
+
+            // Clear XPSR to avoid undefined instruction fault caused by IT/ICI
+            Write32(0xE000EDF8, 0x01000000);
+            Write32(0xE000EDF4, 0x00010010);
+            // Set MSPLIM to 0
+            Write32(0xE000EDF8, 0x00000000);
+            Write32(0xE000EDF4, 0x0001001C);
+        - while: (Read32(DHCSR_Addr) & 0x02000000)
+          timeout: 500000
+        - if: (Read32(DHCSR_Addr) & 0x00020000) == 0
+          execute: |
+            Write32(DHCSR_Addr, 0xA05F0003);  // Force halt until finding a proper catch. Probably works better from flash.
+      pname: cm33_core0
+    - name: ResetHardware
+      blocks:
+        - execute: |
+            __var nReset      = 0x80;
+            __var canReadPins = 0;
+            __var SCS_Addr    = 0xE000E000;
+            __var DHCSR_Addr  = SCS_Addr + 0xDF0;
+            __var DEMCR_Addr  = SCS_Addr + 0xDFC;
+            __var tmp;
+
+            //Halt the core
+            Write32(DHCSR_Addr, 0xA05F0003);
+            //clear VECTOR CATCH and set TRCENA
+            tmp = Read32(DEMCR_Addr);
+            Write32(DEMCR_Addr, tmp | 0x1000000);
+            __errorcontrol = 1;
+
+            //// // Set watch point at SYSCON_BASE + 0x40 access
+            //// Write32(0xE0001020, 0x50000040);
+            //// Write32(0xE0001028, 0x00000814);
+
+            // Set watch point
+            Write32(0xE0001020, 0x00000000);
+            Write32(0xE0001028, 0x412);
+            Write32(0xE0001030, 0x00FFFFFF);
+            Write32(0xE0001038, 0x403);
+            Write32(0xE0001040, 0x80000000);
+            Write32(0xE0001048, 0x412);
+            Write32(0xE0001050, 0x8FFFFFFF);
+            Write32(0xE0001058, 0x403);
+
+            Write32(0xE0001060, 0x10000000);
+            Write32(0xE0001068, 0x412);
+            Write32(0xE0001070, 0x10FFFFFF);
+            Write32(0xE0001078, 0x403);
+            Write32(0xE0001080, 0x90000000);
+            Write32(0xE0001088, 0x412);
+            Write32(0xE0001090, 0x9FFFFFFF);
+            Write32(0xE0001098, 0x403);
+
+            // De-assert nRESET line
+            canReadPins = (DAP_SWJ_Pins(0x00, nReset, 0) != 0xFFFFFFFF);
+        - while: 1
+          timeout: 50000
+        - if: canReadPins
+          blocks:
+            - while: (DAP_SWJ_Pins(nReset, nReset, 0) & nReset) == 0
+              timeout: 1000000
+        - if: "!canReadPins"
+          blocks:
+            - execute: |
+                // Assert nRESET line
+                DAP_SWJ_Pins(nReset, nReset, 0);
+            - while: 1
+              timeout: 100000
+        - if: (__connection & (1 << 17)) == 0
+          execute: |
+            Sequence("WaitForStopAfterReset");
+            __errorcontrol = 0;
+      pname: cm33_core0
+    - name: ResetSystemCore0
+      blocks:
+        - execute: |
+            __dp = 0;
+            __ap = 0;
+            // System Control Space (SCS) offset as defined in Armv6-M/Armv7-M.
+            __var SCS_Addr   = 0xE000E000;
+            __var AIRCR_Addr = SCS_Addr + 0xD0C;
+            __var DHCSR_Addr = SCS_Addr + 0xDF0;
+            __var DEMCR_Addr = SCS_Addr + 0xDFC;
+            __var tmp;
+            //Halt the core
+            Write32(DHCSR_Addr, 0xA05F0003);
+            //clear VECTOR CATCH and set TRCENA
+            tmp = Read32(DEMCR_Addr);
+            Write32(DEMCR_Addr, tmp | 0x1000000);
+            // Set watch point at SYSCON_BASE+0x40 access
+            Write32(0xE0001020, 0x50000040);
+            Write32(0xE0001028, 0x00000814);
+
+            __errorcontrol = 1;
+            // Execute SYSRESETREQ via AIRCR
+            Write32(AIRCR_Addr, 0x05FA0004);
+            Sequence("WaitForStopAfterReset");
+            __errorcontrol = 0;
+      pname: cm33_core0
+    - name: ResetProcessorCore1
+      blocks:
+        - execute: |
+            __var SYSCON_NS_Base_Addr = 0x40000000;
+            __var CPUCTRL_Addr        = SYSCON_NS_Base_Addr + 0x800;
+            __var value               = 0;
+            __var apOrg               = __ap;
+
+            __ap = 0;                           // Switch to CPU0 AP to drive CPU1 reset via CPUCTRL register
+
+            value      = Read32(CPUCTRL_Addr);  // Read CPUCTRL Register
+            value &= 0x0000FFFF;            // Preserve previous settings
+            value     |= 0xC0C40000;            // Set key value
+            value     |= 0x00000028;            // Set CPU1CLKEN and CPU1RSTEN
+            Write32(CPUCTRL_Addr, value);       // Put CPU1 into reset
+
+            value &= ~0x00000020;           // Clear CPU1RSTEN
+            Write32(CPUCTRL_Addr, value);       // Release CPU1 from reset
+
+            __ap = apOrg;
+      pname: cm33_core0
+    - name: TraceStart
+      blocks:
+        - info: SWO Trace output selected
+          if: __traceout & 0x1
+          blocks:
+            - execute: |
+                Sequence("EnableTraceClk");       // Enable and configure trace clock
+            - info: SWO via PIO0_10
+              if: SWO_Pin == 0
+              execute: |
+                Write32(0x40001028, 0x00000046); // Configure PIO0_10: FUNC - 6, MODE - 0, SLEW - 1, INVERT - 0, DIGMODE - 0, OD - 0
+            - info: SWO via PIO0_8
+              if: SWO_Pin == 1
+              execute: |
+                Write32(0x40001020, 0x00000044); // Configure PIO0_10: FUNC - 4, MODE - 0, SLEW - 1, INVERT - 0, DIGMODE - 0, OD - 0
+      pname: cm33_core0

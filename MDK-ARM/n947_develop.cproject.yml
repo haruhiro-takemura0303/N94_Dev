@@ -1,0 +1,97 @@
+project:
+  device: :cm33_core0
+  packs:
+    - pack: ARM::CMSIS@^6.1.0
+    - pack: NXP::MCXN947_DFP@^19.0.0
+    - pack: ARM::CMSIS-NN@^4.0.0
+    - pack: ARM::CMSIS-DSP@^1.10.1
+  setups:
+    - setup: Options for TZ_Disabled
+      processor:
+        fpu: sp
+        trustzone: "off"
+      add-path:
+        - NXP/frdmmcxn947_hello_world_cm33_core0/drivers
+        - NXP/frdmmcxn947_hello_world_cm33_core0/utilities
+        - NXP/frdmmcxn947_hello_world_cm33_core0/component
+        - NXP/frdmmcxn947_hello_world_cm33_core0/board
+        - NXP/frdmmcxn947_hello_world_cm33_core0/component/uart
+        - NXP/frdmmcxn947_hello_world_cm33_core0/utilities/debug_console_lite
+        - NXP/frdmmcxn947_hello_world_cm33_core0/utilities/str
+        - ../Development/USBD/inc
+      debug: "on"
+      misc:
+        - C:
+            - -std=c99
+          C-CPP:
+            - -fno-rtti
+            - -funsigned-char
+            - -fshort-enums
+            - -fshort-wchar
+            - -ffunction-sections
+            - -Wno-packed
+            - -Wno-missing-variable-declarations
+            - -Wno-missing-prototypes
+            - -Wno-missing-noreturn
+            - -Wno-sign-conversion
+            - -Wno-nonportable-include-path
+            - -Wno-reserved-id-macro
+            - -Wno-unused-macros
+            - -Wno-documentation-unknown-command
+            - -Wno-documentation
+            - -Wno-license-management
+            - -Wno-parentheses-equality
+          CPP:
+            - -xc++
+            - -std=c++11
+            - -fno-exceptions
+          ASM:
+            - -masm=auto
+          Link:
+            - --map
+            - --load_addr_map_info
+            - --xref
+            - --callgraph
+            - --symbols
+            - --info sizes
+            - --info totals
+            - --info unused
+            - --info veneers
+            - --strict
+            - --summary_stderr
+            - --info summarysizes
+  linker:
+    - script: Objects/n947_develop.sct
+  groups:
+    - group: sys
+      files:
+        - file: sys/main.c
+        - file: sys/startup_MCXN947_cm33_core0.c
+    - group: usbd
+      files:
+        - file: ../Development/USBD/src/usbd_sys.c
+    - group: board
+      files:
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/board/board.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/board/clock_config.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/board/hardware_init.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/board/peripherals.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/board/pin_mux.c
+    - group: fsl_lib
+      files:
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/component/uart/fsl_adapter_lpuart.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/utilities/debug_console_lite/fsl_debug_console.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/utilities/str/fsl_str.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/utilities/fsl_assert.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_clock.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_common.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_common_arm.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_gpio.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_lpflexcomm.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_lpuart.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_reset.c
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_spc.c
+  components:
+    - component: ARM::CMSIS:CORE
+    - component: NXP::Device:CMSIS:MCXN947_header
+    - component: NXP::Device:CMSIS:MCXN947_system

@@ -1,0 +1,219 @@
+build:
+  generated-by: csolution version 2.7.0
+  solution: n947_develop.csolution.yml
+  project: n947_develop.cproject.yml
+  context: n947_develop+TZ_Disabled
+  compiler: AC6
+  device: MCXN947VDF:cm33_core0
+  device-pack: NXP::MCXN947_DFP@19.0.0
+  processor:
+    dsp: on
+    endian: little
+    fpu: sp
+    trustzone: off
+    core: Cortex-M33
+  packs:
+    - pack: ARM::CMSIS@6.1.0
+      path: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.1.0
+    - pack: NXP::MCXN947_DFP@19.0.0
+      path: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0
+  optimize: debug
+  debug: on
+  misc:
+    ASM:
+      - -masm=auto
+    C:
+      - -std=c99
+      - -fno-rtti
+      - -funsigned-char
+      - -fshort-enums
+      - -fshort-wchar
+      - -ffunction-sections
+      - -Wno-packed
+      - -Wno-missing-variable-declarations
+      - -Wno-missing-prototypes
+      - -Wno-missing-noreturn
+      - -Wno-sign-conversion
+      - -Wno-nonportable-include-path
+      - -Wno-reserved-id-macro
+      - -Wno-unused-macros
+      - -Wno-documentation-unknown-command
+      - -Wno-documentation
+      - -Wno-license-management
+      - -Wno-parentheses-equality
+    CPP:
+      - -xc++
+      - -std=c++11
+      - -fno-exceptions
+      - -fno-rtti
+      - -funsigned-char
+      - -fshort-enums
+      - -fshort-wchar
+      - -ffunction-sections
+      - -Wno-packed
+      - -Wno-missing-variable-declarations
+      - -Wno-missing-prototypes
+      - -Wno-missing-noreturn
+      - -Wno-sign-conversion
+      - -Wno-nonportable-include-path
+      - -Wno-reserved-id-macro
+      - -Wno-unused-macros
+      - -Wno-documentation-unknown-command
+      - -Wno-documentation
+      - -Wno-license-management
+      - -Wno-parentheses-equality
+    Link:
+      - --map
+      - --load_addr_map_info
+      - --xref
+      - --callgraph
+      - --symbols
+      - --info sizes
+      - --info totals
+      - --info unused
+      - --info veneers
+      - --strict
+      - --summary_stderr
+      - --info summarysizes
+  define:
+    - CPU_MCXN947VDF_cm33_core0
+    - _RTE_
+  define-asm:
+    - CPU_MCXN947VDF_cm33_core0
+    - _RTE_
+  add-path:
+    - NXP/frdmmcxn947_hello_world_cm33_core0/drivers
+    - NXP/frdmmcxn947_hello_world_cm33_core0/utilities
+    - NXP/frdmmcxn947_hello_world_cm33_core0/component
+    - NXP/frdmmcxn947_hello_world_cm33_core0/board
+    - NXP/frdmmcxn947_hello_world_cm33_core0/component/uart
+    - NXP/frdmmcxn947_hello_world_cm33_core0/utilities/debug_console_lite
+    - NXP/frdmmcxn947_hello_world_cm33_core0/utilities/str
+    - ../Development/USBD/inc
+    - RTE/_TZ_Disabled
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.1.0/CMSIS/Core/Include
+    - ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947
+  add-path-asm:
+    - RTE/_TZ_Disabled
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.1.0/CMSIS/Core/Include
+    - ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947
+  output-dirs:
+    intdir: tmp
+    outdir: out/n947_develop/TZ_Disabled
+    rtedir: RTE
+  output:
+    - type: elf
+      file: n947_develop.axf
+  components:
+    - component: ARM::CMSIS:CORE@6.1.0
+      condition: ARMv6_7_8-M Device
+      from-pack: ARM::CMSIS@6.1.0
+      selected-by: ARM::CMSIS:CORE
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.1.0/CMSIS/Core/Include
+          category: include
+          version: 6.1.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.1.0/CMSIS/Core/Include/tz_context.h
+          category: header
+          version: 6.1.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.1.0/CMSIS/Documentation/html/Core/index.html
+          category: doc
+          version: 6.1.0
+    - component: NXP::Device:CMSIS:MCXN947_header@1.0.0
+      condition: device.MCXN947_CMSIS.condition_id
+      from-pack: NXP::MCXN947_DFP@19.0.0
+      selected-by: NXP::Device:CMSIS:MCXN947_header
+      files:
+        - file: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947
+          category: include
+          version: 1.0.0
+        - file: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947/MCXN947_cm33_core0.h
+          category: header
+          version: 1.0.0
+        - file: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947/MCXN947_cm33_core0_features.h
+          category: header
+          version: 1.0.0
+        - file: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947/fsl_device_registers.h
+          category: header
+          version: 1.0.0
+    - component: NXP::Device:CMSIS:MCXN947_system@1.0.0
+      condition: device.MCXN947_system.condition_id
+      from-pack: NXP::MCXN947_DFP@19.0.0
+      selected-by: NXP::Device:CMSIS:MCXN947_system
+      files:
+        - file: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947
+          category: include
+          version: 1.0.0
+        - file: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947/system_MCXN947_cm33_core0.c
+          category: sourceC
+          version: 1.0.0
+        - file: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/devices/MCXN947/system_MCXN947_cm33_core0.h
+          category: header
+          version: 1.0.0
+  linker:
+    script: Objects/n947_develop.sct
+  groups:
+    - group: sys
+      files:
+        - file: sys/main.c
+          category: sourceC
+        - file: sys/startup_MCXN947_cm33_core0.c
+          category: sourceC
+    - group: usbd
+      files:
+        - file: ../Development/USBD/src/usbd_sys.c
+          category: sourceC
+    - group: board
+      files:
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/board/board.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/board/clock_config.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/board/hardware_init.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/board/peripherals.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/board/pin_mux.c
+          category: sourceC
+    - group: fsl_lib
+      files:
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/component/uart/fsl_adapter_lpuart.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/utilities/debug_console_lite/fsl_debug_console.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/utilities/str/fsl_str.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/utilities/fsl_assert.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_clock.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_common.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_common_arm.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_gpio.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_lpflexcomm.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_lpuart.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_reset.c
+          category: sourceC
+        - file: NXP/frdmmcxn947_hello_world_cm33_core0/drivers/fsl_spc.c
+          category: sourceC
+  constructed-files:
+    - file: RTE/_TZ_Disabled/RTE_Components.h
+      category: header
+  licenses:
+    - license: <unknown>
+      license-agreement: ${CMSIS_PACK_ROOT}/NXP/MCXN947_DFP/19.0.0/Licenses.txt
+      packs:
+        - pack: NXP::MCXN947_DFP@19.0.0
+      components:
+        - component: NXP::Device:CMSIS:MCXN947_header@1.0.0
+        - component: NXP::Device:CMSIS:MCXN947_system@1.0.0
+    - license: Apache-2.0
+      packs:
+        - pack: ARM::CMSIS@6.1.0
+      components:
+        - component: ARM::CMSIS:CORE@6.1.0

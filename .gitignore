@@ -1,0 +1,5 @@
+/.vscode/
+/MDK-ARM/Objects/
+/MDK-ARM/Listings/
+*.uvoptx
+*.uvguix.*

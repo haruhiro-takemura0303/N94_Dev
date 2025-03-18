@@ -1,0 +1,20 @@
+build-idx:
+  generated-by: csolution version 2.7.0
+  csolution: n947_develop.csolution.yml
+  tmpdir: tmp
+  cprojects:
+    - cproject: n947_develop.cproject.yml
+  cbuilds:
+    - cbuild: n947_develop+TZ_Disabled.cbuild.yml
+      project: n947_develop
+      configuration: +TZ_Disabled
+      messages:
+        warnings:
+          - no compiler registered. Add path to compiler 'bin' directory with environment variable <name>_TOOLCHAIN_<major>_<minor>_<patch>. <name> is one of AC6, GCC, IAR, CLANG
+        info:
+          - n947_develop.cbuild-pack.yml - file is already up-to-date
+          - TZ_Disabled.cbuild-run.yml - file is already up-to-date
+          - n947_develop+TZ_Disabled.cbuild.yml - file generated successfully
+      packs-unused:
+        - pack: ARM::CMSIS-DSP@1.16.2
+        - pack: ARM::CMSIS-NN@4.1.0
