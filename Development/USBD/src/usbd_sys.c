@@ -7,6 +7,23 @@
 #include "usbd_sys.h"
 #include "clock_config.h"
 #include "fsl_spc.h"
+#include "cmsis_armclang.h"
+
+#ifndef VSCODE
+__ALIGNED(2048)
+#endif
+/*static*/ dQH_t st_dQH[USBD_MAX_EP_DCI];
+#ifndef VSCODE
+__ALIGNED(32)
+#endif
+/*static*/dTD_t stRXdTD[USBD_MAX_EP_NUM];
+#ifndef VSCODE
+__ALIGNED(32)
+#endif
+/*static*/dTD_t stTXdTD[USBD_MAX_EP_NUM];
+
+/*static*/ uint32_t stEp0RxBuf[256];
+/*static*/ uint32_t stEp0TxBuf[256];
 
 static void phy_FixDeviceMode(void)
 {
@@ -14,13 +31,12 @@ static void phy_FixDeviceMode(void)
         .DCDCVoltage = kSPC_DCDC_OverdriveVoltage,
         .DCDCDriveStrength = kSPC_DCDC_NormalDriveStrength
     };
-    
 
     spc_sram_voltage_config_t cfg = {
         .operateVoltage = kSPC_sramOperateAt1P2V,
         .requestVoltageUpdate = true
     };
-
+    
     /*DCDC Power Setting*/
     SPC0->ACTIVE_VDELAY = 0x0500;
     SPC_SetActiveModeDCDCRegulatorConfig(SPC0, &opt);
@@ -58,18 +74,75 @@ static void phy_FixDeviceMode(void)
 void Usbd_SysInit(void)
 {
     /*PHY & Clocking Configuration*/
-	phy_FixDeviceMode();
+		phy_FixDeviceMode();
 
     /*Controller device mode*/
-    USBHS1__USBC->USBMODE = USBHS_USBMODE_CM(0b10);
+    UDEV->USBMODE = USBHS_USBMODE_CM(0b10);
 
-    /*Interrupt Enable*/
-    USBHS1__USBC->USBINTR = (USBHS_USBINTR_UE_MASK | USBHS_USBINTR_UEE_MASK | USBHS_USBINTR_PCE_MASK);
+    /*Interrupt Enable (USBINT, USBERRINT, PORTSCINT, USBRESETINT)*/
+    UDEV->USBINTR = (USBHS_USBINTR_UE_MASK | USBHS_USBINTR_UEE_MASK | USBHS_USBINTR_PCE_MASK | USBHS_USBINTR_URE_MASK);
     NVIC_SetPriority(USB1_HS_IRQn, 1);
     NVIC_EnableIRQ(USB1_HS_IRQn);
 
+    /*Immidiate Interrupt*/
+    UDEV->USBCMD &= ~USBHS_USBCMD_ITC_MASK;
 
+    /*Set dQH List*/
+    UDEV->ENDPTLISTADDR = (uint32_t)(&st_dQH);
+	
+    /*Endpoint 0 Settings*/
+    st_dQH[USBD_EP0_OUT_DCI].endpointCapability.BIT.ios = 1;
+    st_dQH[USBD_EP0_OUT_DCI].endpointCapability.BIT.maximumPacketLength = 0x40;
+    st_dQH[USBD_EP0_OUT_DCI].endpointCapability.BIT.mult = 0;
+    st_dQH[USBD_EP0_OUT_DCI].endpointCapability.BIT.zlt = 0;
 
-
+    st_dQH[USBD_EP0_IN_DCI].endpointCapability.BIT.ios = 1;
+    st_dQH[USBD_EP0_IN_DCI].endpointCapability.BIT.maximumPacketLength = 0x40;
+    st_dQH[USBD_EP0_IN_DCI].endpointCapability.BIT.mult = 0;
+    st_dQH[USBD_EP0_IN_DCI].endpointCapability.BIT.zlt = 0;
 }
 
+void Usbd_SysStart(void)
+{
+    UDEV->USBCMD |= USBHS_USBCMD_RS_MASK;
+}
+
+void USB1_HS_IRQHandler(void)
+{
+    uint32_t usbSts = UDEV->USBSTS;
+    uint32_t stat;
+    if (usbSts & USBHS_USBSTS_UI_MASK){
+        /*USB Interrupt (Valid Transfer Completion)*/
+        UDEV->USBSTS = USBHS_USBSTS_UI_MASK;
+    } else if (usbSts & USBHS_USBSTS_UEI_MASK){
+        /*USB Error Interrupt (Invalid Transfer Completion)*/
+        UDEV->USBSTS = USBHS_USBSTS_UEI_MASK;
+    } else if (usbSts & USBHS_USBSTS_PCI_MASK){
+        /*Port Status Change*/
+        UDEV->USBSTS = USBHS_USBSTS_PCI_MASK;
+    } else if (usbSts & USBHS_USBSTS_URI_MASK){
+        /*Bus Reset Received*/
+        UDEV->USBSTS = USBHS_USBSTS_URI_MASK;
+
+        stat = UDEV->ENDPTSETUPSTAT;
+        UDEV->ENDPTSETUPSTAT = stat;
+        
+        stat = UDEV->ENDPTCOMPLETE;
+        UDEV->ENDPTCOMPLETE = stat;
+        
+        while (UDEV->ENDPTPRIME);
+        UDEV->ENDPTFLUSH = 0xFFFFFFFFUL;
+
+        if (!(UDEV->PORTSC1 & USBHS_PORTSC1_PR_MASK)){
+            return;
+        }
+
+    } else if (usbSts & USBHS_USBSTS_SRI_MASK){
+        /*SOF Packet Received*/
+        UDEV->USBSTS = USBHS_USBSTS_SRI_MASK;
+    } else if (usbSts & USBHS_USBSTS_SLI_MASK){
+        /*Enter Suspend State*/
+        UDEV->USBSTS = USBHS_USBSTS_SLI_MASK;
+    }
+
+}
