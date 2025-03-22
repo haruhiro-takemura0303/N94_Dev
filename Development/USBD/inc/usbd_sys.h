@@ -125,6 +125,11 @@ typedef struct{
 }dTD_t;
 
 typedef struct{
+	uint8_t* descriptor;
+	uint16_t size;
+}usbDcd_Descriptor_Info_t;
+
+typedef struct{
     uint8_t valid;
     void* bufPtr;
     void (*handlerCallback)(uint32_t size);
@@ -132,8 +137,11 @@ typedef struct{
 
 typedef struct{
     usb_BusState_t busState;
-    usbDcd_Endpoint_Info_t rxEp;
-    usbDcd_Endpoint_Info_t txEp; 
+    usbDcd_Endpoint_Info_t rxEp[USBD_MAX_EP_NUM];
+    usbDcd_Endpoint_Info_t txEp[USBD_MAX_EP_NUM];
+	usbDcd_Descriptor_Info_t deviceDesc;
+	usbDcd_Descriptor_Info_t configDesc;
+	usbDcd_Descriptor_Info_t* strDescArray; 
 }usbDcd_Device_info_t;
 
 

@@ -114,13 +114,16 @@ void USB1_HS_IRQHandler(void)
     if (usbSts & USBHS_USBSTS_UI_MASK){
         /*USB Interrupt (Valid Transfer Completion)*/
         UDEV->USBSTS = USBHS_USBSTS_UI_MASK;
-    } else if (usbSts & USBHS_USBSTS_UEI_MASK){
+    } 
+    if (usbSts & USBHS_USBSTS_UEI_MASK){
         /*USB Error Interrupt (Invalid Transfer Completion)*/
         UDEV->USBSTS = USBHS_USBSTS_UEI_MASK;
-    } else if (usbSts & USBHS_USBSTS_PCI_MASK){
+    } 
+    if (usbSts & USBHS_USBSTS_PCI_MASK){
         /*Port Status Change*/
         UDEV->USBSTS = USBHS_USBSTS_PCI_MASK;
-    } else if (usbSts & USBHS_USBSTS_URI_MASK){
+    } 
+    if (usbSts & USBHS_USBSTS_URI_MASK){
         /*Bus Reset Received*/
         UDEV->USBSTS = USBHS_USBSTS_URI_MASK;
 
@@ -137,10 +140,12 @@ void USB1_HS_IRQHandler(void)
             return;
         }
 
-    } else if (usbSts & USBHS_USBSTS_SRI_MASK){
+    } 
+    if (usbSts & USBHS_USBSTS_SRI_MASK){
         /*SOF Packet Received*/
         UDEV->USBSTS = USBHS_USBSTS_SRI_MASK;
-    } else if (usbSts & USBHS_USBSTS_SLI_MASK){
+    }
+    if (usbSts & USBHS_USBSTS_SLI_MASK){
         /*Enter Suspend State*/
         UDEV->USBSTS = USBHS_USBSTS_SLI_MASK;
     }

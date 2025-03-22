@@ -8,9 +8,13 @@
 #include "clock_config.h"
 #include "pin_mux.h"
 
+#include "usbd_dual_vcom.h"
+
 int main (void)
 {
 	BOARD_InitHardware();
+
+	InitDualVcom();
 	
 	while(1){
 	}

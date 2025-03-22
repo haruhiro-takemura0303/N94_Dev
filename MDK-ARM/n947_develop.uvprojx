@@ -10,7 +10,7 @@
       <TargetName>TZ_Disabled</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>6230000::V6.23::ARMCLANG</pCCUsed>
+      <pCCUsed>6190000::V6.19::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -403,6 +403,16 @@
               <FileName>usbd_sys.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\USBD\src\usbd_sys.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbdDualVcomDescriptor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\USBD\src\usbdDualVcomDescriptor.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_dual_vcom.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\USBD\src\usbd_dual_vcom.c</FilePath>
             </File>
           </Files>
         </Group>
