@@ -11,23 +11,6 @@
 
 /************** Descriptor Macros **************/
 
-/* Common */
-#define WORDLB(x)    (((uint32_t)x) & 0xFF)
-#define WORDHB(x)    ((((uint32_t)x) & 0xFF00) >> 8)
-#define DWORD0B(x)  (((uint32_t)x) & 0xFF)
-#define DWORD1B(x)  ((((uint32_t)x) & 0xFF00) >> 8)
-#define DWORD2B(x)  ((((uint32_t)x) & 0xFF0000) >> 16)
-#define DWORD3B(x)  ((((uint32_t)x) & 0xFF000000) >> 24)
-enum{
-	DESCTYPE_DEVICE = 1,
-	DESCTYPE_CONFIG = 2,
-    DESCTYPE_STRING = 3,
-	DESCTYPE_INTERFACE = 4,
-	DESCTYPE_ENDPOINT = 5,
-	DESCTYPE_INTERFACEASSOC = 11,
-    DESCTYPE_CSIF = 0x24,
-};
-
 enum{
     STRDESC_IDX_MANUFACTURER = 1,
     STRDESC_IDX_PRODUCT,
@@ -116,4 +99,8 @@ enum{
 /* String */
 #define USB_LANGID_ENG              0x0409
 #define USB_STRING_MAX_SIZE         (128 + 2)
+
+
+int32_t UsbdDualVcom_InitDescriptor(void);
+
 #endif /*__USBDDUALVCOMDESCRIPTOR_H__*/

@@ -9,5 +9,7 @@
 void InitDualVcom(void)
 {
     Usbd_SysInit();
+    UsbdDualVcom_InitDescriptor();
+
     Usbd_SysStart();
 }

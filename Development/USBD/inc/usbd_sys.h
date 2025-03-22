@@ -7,7 +7,10 @@
 #ifndef __USBD_SYS_H__
 #define __USBD_SYS_H__
 
+#include "cmsis_armclang.h"
 #include "fsl_device_registers.h"
+#include "clock_config.h"
+#include "fsl_spc.h"
 
 #define UDEV                          USBHS1__USBC
 
@@ -16,6 +19,8 @@
 #define USBD_MAX_dTD_RESOURCE			16
 #define USBD_EP0_OUT_DCI                0
 #define USBD_EP0_IN_DCI                 1
+#define USBD_EP0_OUT    		        0
+#define USBD_EP0_IN		                0x80
 
 typedef enum{
     DISCONNECTED = 0,
@@ -86,6 +91,18 @@ enum{
 	BREQ_SET_ISOCH_DELAY
 };
 
+enum{
+	DESCTYPE_DEVICE = 1,
+	DESCTYPE_CONFIG = 2,
+    DESCTYPE_STRING = 3,
+	DESCTYPE_INTERFACE = 4,
+	DESCTYPE_ENDPOINT = 5,
+	DESCTYPE_INTERFACEASSOC = 11,
+    DESCTYPE_CSIF = 0x24,
+};
+
+#define DEFAULT_EP		0
+
 typedef struct{
     union{
         struct {
@@ -125,27 +142,55 @@ typedef struct{
 }dTD_t;
 
 typedef struct{
-	uint8_t* descriptor;
+	const uint8_t* descriptor;
 	uint16_t size;
 }usbDcd_Descriptor_Info_t;
 
 typedef struct{
     uint8_t valid;
+	uint8_t halt;
+	uint16_t lastTxSize;
     void* bufPtr;
-    void (*handlerCallback)(uint32_t size);
+    void (*handlerCallback)(uint16_t size);
 }usbDcd_Endpoint_Info_t;
 
 typedef struct{
     usb_BusState_t busState;
+	usb_SetupPacket_t lastSetup;
     usbDcd_Endpoint_Info_t rxEp[USBD_MAX_EP_NUM];
     usbDcd_Endpoint_Info_t txEp[USBD_MAX_EP_NUM];
 	usbDcd_Descriptor_Info_t deviceDesc;
 	usbDcd_Descriptor_Info_t configDesc;
-	usbDcd_Descriptor_Info_t* strDescArray; 
+	usbDcd_Descriptor_Info_t* strDescArray;
+	uint8_t strMaxIndex; 
 }usbDcd_Device_info_t;
 
+typedef enum{
+	USBD_OK = 0,
+	USBD_INVALID_PARAM = -1,
+	USBD_DISABLED_EP = -2,
+}usbDcd_Status_t;
+
+#define USBD_dTD_Token_Active	0x80
+#define USBD_dTD_Token_Mask		0xFF
+#define USBD_dQH_dTD_T			0x00000001UL
+
+#define USB_IOC_ENABLE	true
+#define	USB_IOC_DISABLE	false
+
+/************** Descriptor Macros **************/
+#define WORDLB(x)    (((uint32_t)x) & 0xFF)
+#define WORDHB(x)    ((((uint32_t)x) & 0xFF00) >> 8)
+#define DWORD0B(x)  (((uint32_t)x) & 0xFF)
+#define DWORD1B(x)  ((((uint32_t)x) & 0xFF00) >> 8)
+#define DWORD2B(x)  ((((uint32_t)x) & 0xFF0000) >> 16)
+#define DWORD3B(x)  ((((uint32_t)x) & 0xFF000000) >> 24)
 
 void Usbd_SysInit(void);
 void Usbd_SysStart(void);
+void Usbd_SetDescriptor(int descType, const uint8_t* descPtr, uint16_t descSize);
+void Usbd_SetStringDescriptor(usbDcd_Descriptor_Info_t* descArray, uint8_t maxIndex);
+usbDcd_Status_t Usbd_StartNextTransfer(uint8_t epNum, bool ioc, uint16_t txSize);
+void Usbd_SetEpStall(uint8_t epNum);
 
 #endif /*__USBD_SYS_H__*/

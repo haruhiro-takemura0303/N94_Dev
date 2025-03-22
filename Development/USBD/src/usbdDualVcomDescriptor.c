@@ -49,24 +49,24 @@ __ALIGNED(4)
     /*Virtual COM Port #0*/
     /*Interface Association Descriptor #0*/
     USB_IFASSOCDESC_SIZE,               /*bLength*/
-		DESCTYPE_INTERFACEASSOC,            /*bDescriptorType*/
-		USB_IAD0_FIRSTIF,                   /*bFirstInterface*/
-		USB_IAD_IFCOUNT,                    /*bInterfaceCount*/
-		USB_CLASS_COM,                      /*bFunctionClass*/
-		USB_SUBCLASS_COM_ACM,               /*bFunctionSubclass*/
-		USB_UNDEF,                          /*bFunctionProtocol*/
-		USB_UNDEF,                          /*iFunction*/
+    DESCTYPE_INTERFACEASSOC,            /*bDescriptorType*/
+    USB_IAD0_FIRSTIF,                   /*bFirstInterface*/
+    USB_IAD_IFCOUNT,                    /*bInterfaceCount*/
+    USB_CLASS_COM,                      /*bFunctionClass*/
+    USB_SUBCLASS_COM_ACM,               /*bFunctionSubclass*/
+    USB_UNDEF,                          /*bFunctionProtocol*/
+    USB_UNDEF,                          /*iFunction*/
     
     /*Interface Descriptor #0 : CDC Communication Interface*/
     USB_IFDESC_SIZE,                    /*bLength*/
-		DESCTYPE_INTERFACE,                 /*bDescriptorType*/
-		USB_VCOM0_IF_NUM,                   /*bInterfaceNumber*/
-		USB_UNDEF,                          /*bAlternateSetting*/
-		USB_VCOM_NUMOF_EP,                  /*bNumEndpoints*/
-		USB_CLASS_COM,                      /*bInterfaceClass*/
-		USB_SUBCLASS_COM_ACM,               /*bInterfaceSubclass*/
-		USB_PROTOCOL_COM_AT,                /*bInterfaceProtocol*/
-		USB_UNDEF,                          /*iInterface*/
+    DESCTYPE_INTERFACE,                 /*bDescriptorType*/
+    USB_VCOM0_IF_NUM,                   /*bInterfaceNumber*/
+    USB_UNDEF,                          /*bAlternateSetting*/
+    USB_VCOM_NUMOF_EP,                  /*bNumEndpoints*/
+    USB_CLASS_COM,                      /*bInterfaceClass*/
+    USB_SUBCLASS_COM_ACM,               /*bInterfaceSubclass*/
+    USB_PROTOCOL_COM_AT,                /*bInterfaceProtocol*/
+    USB_UNDEF,                          /*iInterface*/
 
     /*Functional Descriptor[0]*/
     /*Header Functional Descriptor*/
@@ -101,63 +101,63 @@ __ALIGNED(4)
 
     /*Endpoint Descriptor #0 Interrupt IN*/
     USB20_ENDPTDESC_SIZE,               /*bLength*/
-		DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
-		USB_VCOM0_CMDEP_ADDR,               /*bEndpointAddress*/
-		USB_VCOM_CMDEP_ATTR,                /*bmAttributes*/
-		WORDLB(USB_VCOM_CMDEP_MPS),         /*wMaxPacketSize*/
+    DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
+    USB_VCOM0_CMDEP_ADDR,               /*bEndpointAddress*/
+    USB_VCOM_CMDEP_ATTR,                /*bmAttributes*/
+    WORDLB(USB_VCOM_CMDEP_MPS),         /*wMaxPacketSize*/
     WORDHB(USB_VCOM_CMDEP_MPS),         
-		USB_VCOM_CMDEP_INTVAL,              /*bInterval*/
+    USB_VCOM_CMDEP_INTVAL,              /*bInterval*/
 
     /*Interface Descriptor #1 : CDC Data Interface*/
     USB_IFDESC_SIZE,                    /*bLength*/
-		DESCTYPE_INTERFACE,                 /*bDescriptorType*/
-		USB_CDC0_IF_NUM,                    /*bInterfaceNumber*/
-		USB_UNDEF,                          /*bAlternateSetting*/
-		USB_CDC_NUMOF_EP,                   /*bNumEndpoints*/
-		USB_CLASS_CDC,                      /*bInterfaceClass*/
-		USB_UNDEF,                          /*bInterfaceSubclass*/
-		USB_UNDEF,                          /*bInterfaceProtocol*/
-		USB_UNDEF,                          /*iInterface*/
+    DESCTYPE_INTERFACE,                 /*bDescriptorType*/
+    USB_CDC0_IF_NUM,                    /*bInterfaceNumber*/
+    USB_UNDEF,                          /*bAlternateSetting*/
+    USB_CDC_NUMOF_EP,                   /*bNumEndpoints*/
+    USB_CLASS_CDC,                      /*bInterfaceClass*/
+    USB_UNDEF,                          /*bInterfaceSubclass*/
+    USB_UNDEF,                          /*bInterfaceProtocol*/
+    USB_UNDEF,                          /*iInterface*/
 
     /*Endpoint Descriptor #1 Bulk OUT*/
     USB20_ENDPTDESC_SIZE,               /*bLength*/
-		DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
-		USB_CDC0_DATAOUTEP_ADDR,            /*bEndpointAddress*/
-		USB_CDC_DATAEP_ATTR,                /*bmAttributes*/
-		WORDLB(USB_CDC_DATAEP_MPS),         /*wMaxPacketSize*/
-			WORDHB(USB_CDC_DATAEP_MPS),         
-		USB_UNDEF,                          /*bInterval*/
+    DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
+    USB_CDC0_DATAOUTEP_ADDR,            /*bEndpointAddress*/
+    USB_CDC_DATAEP_ATTR,                /*bmAttributes*/
+    WORDLB(USB_CDC_DATAEP_MPS),         /*wMaxPacketSize*/
+    WORDHB(USB_CDC_DATAEP_MPS),         
+    USB_UNDEF,                          /*bInterval*/
 
     /*Endpoint Descriptor #2 Bulk IN*/
     USB20_ENDPTDESC_SIZE,               /*bLength*/
-		DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
-		USB_CDC0_DATAINEP_ADDR,             /*bEndpointAddress*/
-		USB_CDC_DATAEP_ATTR,                /*bmAttributes*/
-		WORDLB(USB_CDC_DATAEP_MPS),         /*wMaxPacketSize*/
+    DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
+    USB_CDC0_DATAINEP_ADDR,             /*bEndpointAddress*/
+    USB_CDC_DATAEP_ATTR,                /*bmAttributes*/
+    WORDLB(USB_CDC_DATAEP_MPS),         /*wMaxPacketSize*/
     WORDHB(USB_CDC_DATAEP_MPS),         
-		USB_UNDEF,                          /*bInterval*/
+    USB_UNDEF,                          /*bInterval*/
 
     /*Virtual COM Port #1*/
     /*Interface Association Descriptor #1*/
     USB_IFASSOCDESC_SIZE,               /*bLength*/
-		DESCTYPE_INTERFACEASSOC,            /*bDescriptorType*/
-		USB_IAD1_FIRSTIF,                   /*bFirstInterface*/
-		USB_IAD_IFCOUNT,                    /*bInterfaceCount*/
-		USB_CLASS_COM,                      /*bFunctionClass*/
-		USB_SUBCLASS_COM_ACM,               /*bFunctionSubclass*/
-		USB_UNDEF,                          /*bFunctionProtocol*/
-		USB_UNDEF,                          /*iFunction*/
+    DESCTYPE_INTERFACEASSOC,            /*bDescriptorType*/
+    USB_IAD1_FIRSTIF,                   /*bFirstInterface*/
+    USB_IAD_IFCOUNT,                    /*bInterfaceCount*/
+    USB_CLASS_COM,                      /*bFunctionClass*/
+    USB_SUBCLASS_COM_ACM,               /*bFunctionSubclass*/
+    USB_UNDEF,                          /*bFunctionProtocol*/
+    USB_UNDEF,                          /*iFunction*/
     
     /*Interface Descriptor #2 : CDC Communication Interface*/
     USB_IFDESC_SIZE,                    /*bLength*/
-		DESCTYPE_INTERFACE,                 /*bDescriptorType*/
-		USB_VCOM1_IF_NUM,                   /*bInterfaceNumber*/
-		USB_UNDEF,                          /*bAlternateSetting*/
-		USB_VCOM_NUMOF_EP,                  /*bNumEndpoints*/
-		USB_CLASS_COM,                      /*bInterfaceClass*/
-		USB_SUBCLASS_COM_ACM,               /*bInterfaceSubclass*/
-		USB_PROTOCOL_COM_AT,                /*bInterfaceProtocol*/
-		USB_UNDEF,                          /*iInterface*/
+    DESCTYPE_INTERFACE,                 /*bDescriptorType*/
+    USB_VCOM1_IF_NUM,                   /*bInterfaceNumber*/
+    USB_UNDEF,                          /*bAlternateSetting*/
+    USB_VCOM_NUMOF_EP,                  /*bNumEndpoints*/
+    USB_CLASS_COM,                      /*bInterfaceClass*/
+    USB_SUBCLASS_COM_ACM,               /*bInterfaceSubclass*/
+    USB_PROTOCOL_COM_AT,                /*bInterfaceProtocol*/
+    USB_UNDEF,                          /*iInterface*/
 
     /*Functional Descriptor[0]*/
     /*Header Functional Descriptor*/
@@ -192,47 +192,47 @@ __ALIGNED(4)
 
     /*Endpoint Descriptor #3 Interrupt IN*/
     USB20_ENDPTDESC_SIZE,               /*bLength*/
-		DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
-		USB_VCOM1_CMDEP_ADDR,               /*bEndpointAddress*/
-		USB_VCOM_CMDEP_ATTR,                /*bmAttributes*/
-		WORDLB(USB_VCOM_CMDEP_MPS),         /*wMaxPacketSize*/
+    DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
+    USB_VCOM1_CMDEP_ADDR,               /*bEndpointAddress*/
+    USB_VCOM_CMDEP_ATTR,                /*bmAttributes*/
+    WORDLB(USB_VCOM_CMDEP_MPS),         /*wMaxPacketSize*/
     WORDHB(USB_VCOM_CMDEP_MPS),         
-		USB_VCOM_CMDEP_INTVAL,              /*bInterval*/
+    USB_VCOM_CMDEP_INTVAL,              /*bInterval*/
 
     /*Interface Descriptor #3 : CDC Data Interface*/
     USB_IFDESC_SIZE,                    /*bLength*/
-		DESCTYPE_INTERFACE,                 /*bDescriptorType*/
-		USB_CDC1_IF_NUM,                    /*bInterfaceNumber*/
-		USB_UNDEF,                          /*bAlternateSetting*/
-		USB_CDC_NUMOF_EP,                   /*bNumEndpoints*/
-		USB_CLASS_CDC,                      /*bInterfaceClass*/
-		USB_UNDEF,                          /*bInterfaceSubclass*/
-		USB_UNDEF,                          /*bInterfaceProtocol*/
-		USB_UNDEF,                          /*iInterface*/
+    DESCTYPE_INTERFACE,                 /*bDescriptorType*/
+    USB_CDC1_IF_NUM,                    /*bInterfaceNumber*/
+    USB_UNDEF,                          /*bAlternateSetting*/
+    USB_CDC_NUMOF_EP,                   /*bNumEndpoints*/
+    USB_CLASS_CDC,                      /*bInterfaceClass*/
+    USB_UNDEF,                          /*bInterfaceSubclass*/
+    USB_UNDEF,                          /*bInterfaceProtocol*/
+    USB_UNDEF,                          /*iInterface*/
 
     /*Endpoint Descriptor #4 Bulk OUT*/
     USB20_ENDPTDESC_SIZE,               /*bLength*/
-		DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
-		USB_CDC1_DATAOUTEP_ADDR,            /*bEndpointAddress*/
-		USB_CDC_DATAEP_ATTR,                /*bmAttributes*/
-		WORDLB(USB_CDC_DATAEP_MPS),         /*wMaxPacketSize*/
-		WORDHB(USB_CDC_DATAEP_MPS),         
-		USB_UNDEF,                          /*bInterval*/
+    DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
+    USB_CDC1_DATAOUTEP_ADDR,            /*bEndpointAddress*/
+    USB_CDC_DATAEP_ATTR,                /*bmAttributes*/
+    WORDLB(USB_CDC_DATAEP_MPS),         /*wMaxPacketSize*/
+    WORDHB(USB_CDC_DATAEP_MPS),         
+    USB_UNDEF,                          /*bInterval*/
 
     /*Endpoint Descriptor #5 Bulk IN*/
     USB20_ENDPTDESC_SIZE,               /*bLength*/
-		DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
-		USB_CDC1_DATAINEP_ADDR,             /*bEndpointAddress*/
-		USB_CDC_DATAEP_ATTR,                /*bmAttributes*/
-		WORDLB(USB_CDC_DATAEP_MPS),         /*wMaxPacketSize*/
+    DESCTYPE_ENDPOINT,                  /*bDescriptorType*/
+    USB_CDC1_DATAINEP_ADDR,             /*bEndpointAddress*/
+    USB_CDC_DATAEP_ATTR,                /*bmAttributes*/
+    WORDLB(USB_CDC_DATAEP_MPS),         /*wMaxPacketSize*/
     WORDHB(USB_CDC_DATAEP_MPS),         
-		USB_UNDEF,                          /*bInterval*/
+    USB_UNDEF,                          /*bInterval*/
 };
 
 #ifndef VSCODE
 __ALIGNED(4)
 #endif
-/*static*/ uint8_t stStringLangDescriptor[] = {
+/*static*/ const uint8_t stStringLangDescriptor[] = {
     USB_LANGDESC_SIZE,                  /*bLength*/
     DESCTYPE_STRING,                    /*bDescriptorType*/
     WORDLB(USB_LANGID_ENG),             /*wLangID[0]*/
@@ -254,14 +254,31 @@ __ALIGNED(4)
 #endif
 /*static*/ uint8_t stStringSerialDescriptor[USB_STRING_MAX_SIZE] = {0};
 
-/*static*/ usbDcd_Descriptor_Info_t stStringArray[4] = {0};
+/*static*/ usbDcd_Descriptor_Info_t stStringArray[4] = {
+    {
+        .descriptor = stStringLangDescriptor,
+        .size = USB_LANGDESC_SIZE,
+    },
+    {
+        .descriptor = stStringManufacturerDescriptor,
+        .size = 0,
+    },
+    {
+        .descriptor = stStringProductDescriptor,
+        .size = 0,
+    },
+    {
+        .descriptor = stStringSerialDescriptor,
+        .size = 0,
+    },
+};
 
 /*static*/ const char stManufacturer[] = "NXP Semiconductor";
 /*static*/ const char stProduct[] = "FRDMMCXN947 Experiment";
 /*static*/ const char stSerial[] = "21248931";
 
 
-static int32_t setupStringDesc(uint8_t* desc, char* string)
+static int32_t setupStringDesc(uint8_t* desc, const char* string)
 {
     uint16_t len = strlen(string);
     if ((2 * len + 2) > USB_STRING_MAX_SIZE){
@@ -273,6 +290,32 @@ static int32_t setupStringDesc(uint8_t* desc, char* string)
         desc[2 * i + 2] = (uint8_t)string[i];
         desc[2 * i + 3] = 0;
     }
+    return 0;
+}
+
+int32_t UsbdDualVcom_InitDescriptor(void)
+{
+    int32_t ret = 0;
+    uint16_t strDescArraySz;
+    Usbd_SetDescriptor(DESCTYPE_DEVICE, stDeviceDescriptor, sizeof(stDeviceDescriptor));
+    Usbd_SetDescriptor(DESCTYPE_CONFIG, stConfigurationDescriptor, sizeof(stConfigurationDescriptor));
+    ret = setupStringDesc(stStringManufacturerDescriptor, stManufacturer);
+    if (ret){
+        return ret;
+    }
+    ret = setupStringDesc(stStringProductDescriptor, stProduct);
+    if (ret){
+        return ret;
+    }
+    ret = setupStringDesc(stStringSerialDescriptor, stSerial);
+    if (ret){
+        return ret;
+    }
+    strDescArraySz = sizeof(stStringArray) / sizeof(usbDcd_Descriptor_Info_t);
+    for (int i = 1; i < strDescArraySz; i++){
+        stStringArray[i].size = stStringArray[i].descriptor[0]; //bLength
+    }
+    Usbd_SetStringDescriptor(stStringArray, strDescArraySz);
     return 0;
 }
 
