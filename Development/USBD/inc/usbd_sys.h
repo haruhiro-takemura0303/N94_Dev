@@ -92,6 +92,12 @@ enum{
 };
 
 enum{
+	FEATURE_ENDPOINT_HALT = 0,
+	FEATURE_DEV_REMOTE_WUP,
+	FEATURE_TEST_MODE
+};
+
+enum{
 	DESCTYPE_DEVICE = 1,
 	DESCTYPE_CONFIG = 2,
     DESCTYPE_STRING = 3,
@@ -182,16 +188,28 @@ typedef struct{
 	usbDcd_Status_t (*dataStatHandler)(usbDcd_Control_Dir_t dir);
 } usbDcd_Request_Set_t;
 
+typedef union{
+	struct{
+		uint16_t selfPower:1;
+		uint16_t remoteWakeUp:1;
+		uint16_t rsvd:14;
+	}BIT;
+	uint16_t WORD;
+} usbDcd_DeviceStatus_t;
+
 typedef struct{
     usb_BusState_t busState;
 	usb_SetupPacket_t lastSetup;
 	uint8_t strMaxIndex;
 	uint8_t curConfigVal;
+	usbDcd_DeviceStatus_t status;
     usbDcd_Endpoint_Info_t rxEp[USBD_MAX_EP_NUM];
     usbDcd_Endpoint_Info_t txEp[USBD_MAX_EP_NUM];
 	usbDcd_Descriptor_Info_t deviceDesc;
 	usbDcd_Descriptor_Info_t configDesc;
 	usbDcd_Descriptor_Info_t* strDescArray;
+	usbDcd_Descriptor_Info_t deviceQualiferDesc;
+	usbDcd_Descriptor_Info_t otherSpdConfigDesc;
 	usbDcd_Request_Set_t classSpec;
 	usbDcd_Request_Set_t vendorSpec;
 }usbDcd_Device_info_t;

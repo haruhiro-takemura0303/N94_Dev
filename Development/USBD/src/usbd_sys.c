@@ -119,9 +119,81 @@ static void setupHandler(void)
         case(BMREQ_TYPE_STANDARD):{
             switch(setup->BIT.bRequest){
                 case(BREQ_GET_STATUS):{
+                    switch(setup->BIT.bmRequestType.attr){
+                        case(BMREQ_ATTR_DEVICE):{
+                            uint8_t size;
+                            stEp0TxBuf[0] = device()->status.WORD;
+                            size = setup->BIT.wLength > 2 ? 2 : setup->BIT.wLength;
+                            Usbd_StartNextTransfer(USBD_EP0_IN, USB_IOC_ENABLE, size);
+                            break;
+                        }
+                        case(BMREQ_ATTR_ENDPOINT):{
+                            uint8_t epNum = setup->BIT.wIndex;
+                            usbDcd_Endpoint_Info_t* epArray;
+                            uint8_t epIdx = (epNum & 0xF);
+                            uint8_t epDir = (epNum & 0x80) >> 7;
+                            if (epDir){
+                                epArray = device()->txEp;
+                            } else {
+                                epArray = device()->rxEp;
+                            }
+                            if (epIdx >= USBD_MAX_EP_NUM){
+                                ep0Stall();
+                            } else if (epArray[epIdx].doesExist == 0){
+                                ep0Stall();
+                            } else {
+                                stEp0TxBuf[0] = (uint32_t)epArray[epIdx].halt;
+                                uint8_t size = setup->BIT.wLength > 2 ? 2 : setup->BIT.wLength;
+                                Usbd_StartNextTransfer(USBD_EP0_IN, USB_IOC_ENABLE, size);
+                            }
+                            break;
+                        }
+                        default:{
+                            ep0Stall();
+                            break;
+                        }
+                    }
                     break;
                 }
                 case(BREQ_CLEAR_FEATURE):{
+                    switch(setup->BIT.bmRequestType.attr){
+                        case(BMREQ_ATTR_DEVICE):{
+                            if (setup->BIT.wValue != FEATURE_DEV_REMOTE_WUP){
+                                ep0Stall();
+                                break;
+                            }
+                            ep0StatusIn(USB_IOC_ENABLE);
+                            break;
+                        }
+                        case(BMREQ_ATTR_ENDPOINT):{
+                            uint8_t epNum = setup->BIT.wIndex;
+                            usbDcd_Endpoint_Info_t* epArray;
+                            uint8_t epIdx = (epNum & 0xF);
+                            uint8_t epDir = (epNum & 0x80) >> 7;
+                            if (setup->BIT.wValue != FEATURE_ENDPOINT_HALT){
+                                ep0Stall();
+                                break;
+                            }
+                            if (epDir){
+                                epArray = device()->txEp;
+                            } else {
+                                epArray = device()->rxEp;
+                            }
+                            if (epIdx >= USBD_MAX_EP_NUM){
+                                ep0Stall();
+                                break;
+                            } else if (epArray[epIdx].doesExist == 0){
+                                ep0Stall();
+                                break;
+                            }
+                            ep0StatusIn(USB_IOC_ENABLE);
+                            break;
+                        }
+                        default:{
+                            ep0Stall();
+                            break;
+                        }
+                    }
                     break;
                 }
                 case(BREQ_SET_FEATURE):{
@@ -147,10 +219,18 @@ static void setupHandler(void)
                             break;
                         }
                         case(DESCTYPE_STRING):{
-														uint8_t idx = setup->BIT.wValue & 0xFF;
+                            uint8_t idx = setup->BIT.wValue & 0xFF;
                             if (idx < device()->strMaxIndex){
                                 descInfo = &device()->strDescArray[idx];
                             }
+                            break;
+                        }
+                        case(DESCTYPE_DEVICE_QUALIFIER):{
+                            descInfo = &device()->deviceQualiferDesc;
+                            break;
+                        }
+                        case(DESCTYPE_OTHERSPD_CONFIG):{
+                            descInfo = &device()->otherSpdConfigDesc;
                             break;
                         }
                         default:{
@@ -235,9 +315,12 @@ static void ep0OutHandler(uint16_t size)
         case(BMREQ_TYPE_STANDARD):{
             switch(setup->BIT.bRequest){
                 case(BREQ_GET_STATUS):{
+                    /*Status Stage Completed*/
                     break;
                 }
                 case(BREQ_CLEAR_FEATURE):{
+                    /*N/A*/
+                    ep0Stall();
                     break;
                 }
                 case(BREQ_SET_FEATURE):{
@@ -321,9 +404,39 @@ static void ep0InHandler(uint16_t size)
         case(BMREQ_TYPE_STANDARD):{
             switch(setup->BIT.bRequest){
                 case(BREQ_GET_STATUS):{
+                    /*Data Stage -> Status Stage*/
+                    ep0StatusOut(USB_IOC_ENABLE);
                     break;
                 }
                 case(BREQ_CLEAR_FEATURE):{
+                    /*Status Stage Completed, Update Statuses*/
+                    switch(setup->BIT.wValue){
+                        case(FEATURE_ENDPOINT_HALT):{
+                            uint8_t epNum = setup->BIT.wIndex;
+                            usbDcd_Endpoint_Info_t* epArray;
+                            uint8_t epIdx = (epNum & 0xF);
+                            uint8_t epDir = (epNum & 0x80) >> 7;
+                            if (epDir){
+                                epArray = device()->txEp;
+                            } else {
+                                epArray = device()->rxEp;
+                            }
+                            epArray[epIdx].halt = 0;
+                            if (!epIdx){
+                                UDEV->ENDPTCTRL0 &= ~(1 << (epDir * USBHS_ENDPTCTRL0_TXS_SHIFT));
+                            } else {
+                                UDEV->ENDPTCTRL[epIdx - 1] &= ~(1 << (epDir * USBHS_ENDPTCTRL_TXS_SHIFT));
+                            }
+                            break;
+                        }
+                        case(FEATURE_DEV_REMOTE_WUP):{
+                            device()->status.BIT.remoteWakeUp = 0;
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                    
                     break;
                 }
                 case(BREQ_SET_FEATURE):{
@@ -546,6 +659,16 @@ void Usbd_SetDescriptor(int descType, const uint8_t* descPtr, uint16_t descSize)
             device()->configDesc.size = descSize;
             break;
         }
+        case(DESCTYPE_DEVICE_QUALIFIER):{
+            device()->deviceQualiferDesc.descriptor = descPtr;
+            device()->deviceQualiferDesc.size = descSize;
+            break;
+        }
+        case(DESCTYPE_OTHERSPD_CONFIG):{
+            device()->otherSpdConfigDesc.descriptor = descPtr;
+            device()->otherSpdConfigDesc.size = descSize;
+            break;
+        }
         default:
             break;
     }
@@ -555,6 +678,11 @@ void Usbd_SetStringDescriptor(usbDcd_Descriptor_Info_t* descArray, uint8_t maxIn
 {
     device()->strDescArray = descArray;
     device()->strMaxIndex = maxIndex;
+}
+
+usbDcd_Status_t Usbd_OpenEndpoint(uint8_t epNum, int txType, uint16_t mps, uint8_t mult, void* bufPtr, void func(uint16_t))
+{
+    return USBD_OK;
 }
 
 usbDcd_Status_t Usbd_StartNextTransfer(uint8_t epNum, bool ioc, uint16_t txSize)

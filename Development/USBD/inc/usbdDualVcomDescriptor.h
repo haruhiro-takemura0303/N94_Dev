@@ -24,6 +24,8 @@ enum{
 #define USB_LANGDESC_SIZE           4
 #define USB_IFDESC_SIZE             9
 #define USB20_ENDPTDESC_SIZE        7
+#define USB_DEVICEQUALDESC_SIZE     10
+#define USB_OTHERSPDCONFIGDESC_SIZE 9
 #define USB_IFASSOCDESC_SIZE        8
 
 /* Communication Device Class(Abstruct Communication Model) */
@@ -50,9 +52,11 @@ enum{
 
 /* Device */
 #define USB_HS_VER                  0x0200
+#define USB_FS_VER                  0x0200
 #define USB_CLASS_MISC              0xEF
 #define USB_SUBCLASS_MISC_COMMON    0x02
 #define USB_PROTOCOL_MISC_IAD       0x01
+#define USB_FS_EP0_MPS              0x40
 #define USB_HS_EP0_MPS              0x40
 #define USB_ID_VENDOR               0x1FC9
 #define USB_ID_PRODUCT              0xFF3F
@@ -95,6 +99,7 @@ enum{
 #define USB_CDC1_DATAINEP_ADDR      (USB_IN_EP | 0x04)
 #define USB_CDC_DATAEP_ATTR         0x02    // Bulk
 #define USB_CDC_DATAEP_MPS          0x200
+#define USB_CDC_DATAEP_FS_MPS       0x40
 
 /* String */
 #define USB_LANGID_ENG              0x0409
