@@ -128,7 +128,9 @@ static void setupHandler(void)
                     break;
                 }
                 case(BREQ_SET_ADDRESS):{
-                    __NOP();
+                    uint8_t newAddr = setup->BIT.wValue & 0xFF;
+                    UDEV->DEVICEADDR = ((newAddr << USBHS_DEVICEADDR_USBADR_SHIFT) | USBHS_DEVICEADDR_USBADRA_MASK);
+                    ep0StatusIn(USB_IOC_ENABLE);
                     break;
                 }
                 case(BREQ_GET_DESCRIPTOR):{
@@ -145,8 +147,9 @@ static void setupHandler(void)
                             break;
                         }
                         case(DESCTYPE_STRING):{
-                            if (setup->BIT.wIndex < device()->strMaxIndex){
-                                descInfo = &device()->strDescArray[setup->BIT.wIndex];
+														uint8_t idx = setup->BIT.wValue & 0xFF;
+                            if (idx < device()->strMaxIndex){
+                                descInfo = &device()->strDescArray[idx];
                             }
                             break;
                         }
@@ -174,6 +177,8 @@ static void setupHandler(void)
                     break;
                 }
                 case(BREQ_SET_CONFIGURATION):{
+                    device()->curConfigVal = setup->BIT.wValue;
+                    ep0StatusIn(USB_IOC_ENABLE);
                     break;
                 }
                 case(BREQ_GET_INTERFACE):{
@@ -185,13 +190,39 @@ static void setupHandler(void)
                 case(BREQ_SYNCH_FRAME):{
                     break;
                 }
+                default:{
+                    ep0Stall();
+                    break;
+                }
             }
             break;
         }
         case(BMREQ_TYPE_CLASS):{
+            usbDcd_Status_t stat;
+            if (device()->classSpec.setupHandler){
+                stat = device()->classSpec.setupHandler(setup);
+                if (stat != USBD_OK){
+                    ep0Stall();
+                }
+            } else {
+                ep0Stall();
+            }
             break;
         }
         case(BMREQ_TYPE_VENDOR):{
+            usbDcd_Status_t stat;
+            if (device()->vendorSpec.setupHandler){
+                stat = device()->vendorSpec.setupHandler(setup);
+                if (stat != USBD_OK){
+                    ep0Stall();
+                }
+            } else {
+                ep0Stall();
+            }
+            break;
+        }
+        default:{
+            ep0Stall();
             break;
         }
     }
@@ -213,9 +244,12 @@ static void ep0OutHandler(uint16_t size)
                     break;
                 }
                 case(BREQ_SET_ADDRESS):{
+                    /*N/A*/
+                    ep0Stall();
                     break;
                 }
                 case(BREQ_GET_DESCRIPTOR):{
+                    /*Status Stage Completed*/
                     break;
                 }
                 case(BREQ_SET_DESCRIPTOR):{
@@ -225,6 +259,8 @@ static void ep0OutHandler(uint16_t size)
                     break;
                 }
                 case(BREQ_SET_CONFIGURATION):{
+                    /*N/A*/
+                    ep0Stall();
                     break;
                 }
                 case(BREQ_GET_INTERFACE):{
@@ -236,13 +272,43 @@ static void ep0OutHandler(uint16_t size)
                 case(BREQ_SYNCH_FRAME):{
                     break;
                 }
+                default:{
+                    ep0Stall();
+                    break;
+                }
             }
             break;
         }
         case(BMREQ_TYPE_CLASS):{
+            usbDcd_Status_t stat;
+            if (device()->classSpec.dataStatHandler){
+                stat = device()->classSpec.dataStatHandler(EP0_OUT_TRANSFER);
+                if (stat != USBD_OK){
+                    ep0Stall();
+                } else if ((setup->BIT.bmRequestType.dir == BMREQ_DIR_OUT) && setup->BIT.wLength){
+                    ep0StatusIn(USB_IOC_ENABLE);
+                }
+            } else {
+                ep0Stall();
+            }
             break;
         }
         case(BMREQ_TYPE_VENDOR):{
+            usbDcd_Status_t stat;
+            if (device()->vendorSpec.dataStatHandler){
+                stat = device()->vendorSpec.dataStatHandler(EP0_OUT_TRANSFER);
+                if (stat != USBD_OK){
+                    ep0Stall();
+                } else if ((setup->BIT.bmRequestType.dir == BMREQ_DIR_OUT) && setup->BIT.wLength){
+                    ep0StatusIn(USB_IOC_ENABLE);
+                }
+            } else {
+                ep0Stall();
+            }
+            break;
+        }
+        default:{
+            ep0Stall();
             break;
         }
     }    
@@ -264,6 +330,8 @@ static void ep0InHandler(uint16_t size)
                     break;
                 }
                 case(BREQ_SET_ADDRESS):{
+                    /*Status Stage Completed*/
+                    device()->busState = ADDRESSED;
                     break;
                 }
                 case(BREQ_GET_DESCRIPTOR):{
@@ -278,6 +346,11 @@ static void ep0InHandler(uint16_t size)
                     break;
                 }
                 case(BREQ_SET_CONFIGURATION):{
+                    /*Status Stage Completed*/
+                    device()->busState = CONFIGURED;
+                    for (int i = 1; i < USBD_MAX_EP_NUM; i++){
+                        UDEV->ENDPTCTRL[i - i] = (device()->rxEp[i].epCtrl_RegVal | device()->txEp[i].epCtrl_RegVal);
+                    }
                     break;
                 }
                 case(BREQ_GET_INTERFACE):{
@@ -289,13 +362,43 @@ static void ep0InHandler(uint16_t size)
                 case(BREQ_SYNCH_FRAME):{
                     break;
                 }
+                default:{
+                    ep0Stall();
+                    break;
+                }
             }
             break;
         }
         case(BMREQ_TYPE_CLASS):{
+            usbDcd_Status_t stat;
+            if (device()->classSpec.dataStatHandler){
+                stat = device()->classSpec.dataStatHandler(EP0_IN_TRANSFER);
+                if (stat != USBD_OK){
+                    ep0Stall();
+                } else if ((setup->BIT.bmRequestType.dir == BMREQ_DIR_IN) && setup->BIT.wLength){
+                    ep0StatusOut(USB_IOC_ENABLE);
+                }
+            } else {
+                ep0Stall();
+            }
             break;
         }
         case(BMREQ_TYPE_VENDOR):{
+            usbDcd_Status_t stat;
+            if (device()->vendorSpec.dataStatHandler){
+                stat = device()->vendorSpec.dataStatHandler(EP0_IN_TRANSFER);
+                if (stat != USBD_OK){
+                    ep0Stall();
+                } else if ((setup->BIT.bmRequestType.dir == BMREQ_DIR_IN) && setup->BIT.wLength){
+                    ep0StatusIn(USB_IOC_ENABLE);
+                }
+            } else {
+                ep0Stall();
+            }
+            break;
+        }
+        default:{
+            ep0Stall();
             break;
         }
     }    
@@ -337,10 +440,10 @@ void Usbd_SysInit(void)
     st_dQH[USBD_EP0_IN_DCI].nextdTDPointer = USBD_dQH_dTD_T;
 
     device()->rxEp[DEFAULT_EP].bufPtr = stEp0RxBuf;
-    device()->rxEp[DEFAULT_EP].valid = 1;
+    device()->rxEp[DEFAULT_EP].doesExist = 1;
     device()->rxEp[DEFAULT_EP].handlerCallback = ep0OutHandler;
     device()->txEp[DEFAULT_EP].bufPtr = stEp0TxBuf;
-    device()->txEp[DEFAULT_EP].valid = 1;
+    device()->txEp[DEFAULT_EP].doesExist = 1;
     device()->txEp[DEFAULT_EP].handlerCallback = ep0InHandler;
 }
 
@@ -471,7 +574,7 @@ usbDcd_Status_t Usbd_StartNextTransfer(uint8_t epNum, bool ioc, uint16_t txSize)
         dTDArray = stRXdTD;
         epArray = device()->rxEp;
     }
-    if (!epArray[epIdx].valid){
+    if (!epArray[epIdx].doesExist){
         return USBD_DISABLED_EP;
     }
 
@@ -513,4 +616,28 @@ void Usbd_SetEpStall(uint8_t epNum)
         UDEV->ENDPTCTRL[epIdx - 1] |= (1 << (epDir * USBHS_ENDPTCTRL_TXS_SHIFT));
     }
     epArray[epIdx].halt = 1;
+}
+
+usbDcd_Status_t Usbd_ReadEp0Buffer(void* buf, uint16_t size)
+{
+    if (size > 1024){
+        return USBD_BUFFER_OVER;
+    }
+    memcpy(buf, stEp0RxBuf, size);
+    return USBD_OK;
+}
+
+usbDcd_Status_t Usbd_WriteEp0Buffer(void* buf, uint16_t size)
+{
+    if (size > 1024){
+        return USBD_BUFFER_OVER;
+    }
+    memcpy(stEp0TxBuf, buf, size);
+    return USBD_OK;
+}
+
+void Usbd_SetClassRequestHandler (usbDcd_Status_t setupfunc(usb_SetupPacket_t*), usbDcd_Status_t dataFunc(usbDcd_Control_Dir_t))
+{
+    device()->classSpec.setupHandler = setupfunc;
+    device()->classSpec.dataStatHandler = dataFunc;
 }

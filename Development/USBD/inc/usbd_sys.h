@@ -97,8 +97,17 @@ enum{
     DESCTYPE_STRING = 3,
 	DESCTYPE_INTERFACE = 4,
 	DESCTYPE_ENDPOINT = 5,
+	DESCTYPE_DEVICE_QUALIFIER = 6,
+	DESCTYPE_OTHERSPD_CONFIG = 7,
 	DESCTYPE_INTERFACEASSOC = 11,
     DESCTYPE_CSIF = 0x24,
+};
+
+enum{
+	TYPE_CONTROL = 0,
+	TYPE_ISOCHRONOUS,
+	TYPE_BULK,
+	TYPE_INTERRUPT
 };
 
 #define DEFAULT_EP		0
@@ -141,35 +150,51 @@ typedef struct{
     uint32_t pad;
 }dTD_t;
 
+typedef enum{
+	USBD_OK = 0,
+	USBD_INVALID_PARAM = -1,
+	USBD_DISABLED_EP = -2,
+	USBD_UNSUPPORTED_REQ = -3,
+	USBD_BUFFER_OVER = -4,
+}usbDcd_Status_t;
+
 typedef struct{
 	const uint8_t* descriptor;
 	uint16_t size;
 }usbDcd_Descriptor_Info_t;
 
 typedef struct{
-    uint8_t valid;
+    uint8_t doesExist;
 	uint8_t halt;
 	uint16_t lastTxSize;
+	uint32_t epCtrl_RegVal;
     void* bufPtr;
     void (*handlerCallback)(uint16_t size);
 }usbDcd_Endpoint_Info_t;
 
+typedef enum{
+	EP0_OUT_TRANSFER = 0,
+	EP0_IN_TRANSFER = 0x80
+} usbDcd_Control_Dir_t;
+
+typedef struct{
+	usbDcd_Status_t (*setupHandler)(usb_SetupPacket_t* setup);
+	usbDcd_Status_t (*dataStatHandler)(usbDcd_Control_Dir_t dir);
+} usbDcd_Request_Set_t;
+
 typedef struct{
     usb_BusState_t busState;
 	usb_SetupPacket_t lastSetup;
+	uint8_t strMaxIndex;
+	uint8_t curConfigVal;
     usbDcd_Endpoint_Info_t rxEp[USBD_MAX_EP_NUM];
     usbDcd_Endpoint_Info_t txEp[USBD_MAX_EP_NUM];
 	usbDcd_Descriptor_Info_t deviceDesc;
 	usbDcd_Descriptor_Info_t configDesc;
 	usbDcd_Descriptor_Info_t* strDescArray;
-	uint8_t strMaxIndex; 
+	usbDcd_Request_Set_t classSpec;
+	usbDcd_Request_Set_t vendorSpec;
 }usbDcd_Device_info_t;
-
-typedef enum{
-	USBD_OK = 0,
-	USBD_INVALID_PARAM = -1,
-	USBD_DISABLED_EP = -2,
-}usbDcd_Status_t;
 
 #define USBD_dTD_Token_Active	0x80
 #define USBD_dTD_Token_Mask		0xFF
@@ -177,6 +202,7 @@ typedef enum{
 
 #define USB_IOC_ENABLE	true
 #define	USB_IOC_DISABLE	false
+
 
 /************** Descriptor Macros **************/
 #define WORDLB(x)    (((uint32_t)x) & 0xFF)
@@ -192,5 +218,8 @@ void Usbd_SetDescriptor(int descType, const uint8_t* descPtr, uint16_t descSize)
 void Usbd_SetStringDescriptor(usbDcd_Descriptor_Info_t* descArray, uint8_t maxIndex);
 usbDcd_Status_t Usbd_StartNextTransfer(uint8_t epNum, bool ioc, uint16_t txSize);
 void Usbd_SetEpStall(uint8_t epNum);
+usbDcd_Status_t Usbd_ReadEp0Buffer(void* buf, uint16_t size);
+usbDcd_Status_t Usbd_WriteEp0Buffer(void* buf, uint16_t size);
+void Usbd_SetClassRequestHandler (usbDcd_Status_t setupfunc(usb_SetupPacket_t*), usbDcd_Status_t dataFunc(usbDcd_Control_Dir_t));
 
 #endif /*__USBD_SYS_H__*/
