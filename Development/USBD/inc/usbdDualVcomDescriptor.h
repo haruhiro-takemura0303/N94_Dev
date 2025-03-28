@@ -15,6 +15,8 @@ enum{
     STRDESC_IDX_MANUFACTURER = 1,
     STRDESC_IDX_PRODUCT,
     STRDESC_IDX_SERIAL,
+    STRDESC_IDX_VCOM0,
+    STRDESC_IDX_VCOM1,
 };
 #define USB_UNDEF                   0
 

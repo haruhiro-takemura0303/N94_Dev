@@ -7,6 +7,13 @@
 #include "usbd_dual_vcom.h"
 
 usbd_DualVcom_Info_t stDualVcom;
+/*static*/ uint8_t stCmdBuf[2][32];
+/*static*/ uint8_t stCdcTxBuf[2][1024];
+/*static*/ uint8_t stCdcRxBuf[2][1024];
+/*static*/ struct{
+    uint8_t idx;
+    uint8_t lineBuf[256];
+} stCommandLine[2];
 
 #ifndef VSCODE
 __STATIC_FORCEINLINE usbd_DualVcom_Info_t* vcom()
@@ -95,6 +102,74 @@ static usbDcd_Status_t dataStatHandler(usbDcd_Control_Dir_t dir)
     return ret;
 }
 
+static void configured()
+{
+    Usbd_StartNextTransfer(USB_CDC0_DATAOUTEP_ADDR, USB_IOC_ENABLE, sizeof(stCdcRxBuf[0]));
+    Usbd_StartNextTransfer(USB_CDC1_DATAOUTEP_ADDR, USB_IOC_ENABLE, sizeof(stCdcRxBuf[1]));
+}
+
+static void cmdHandler(uint8_t comIdx, uint16_t size)
+{
+}
+
+static void dataOutHandler(uint8_t comIdx, uint16_t size)
+{
+    int i;
+    uint16_t len;
+    uint8_t idx = stCommandLine[comIdx].idx;
+    for (i = 0; i < size; i++){
+        stCommandLine[comIdx].lineBuf[idx + i] = stCdcRxBuf[comIdx][i];
+        if (stCdcRxBuf[comIdx][i] == '\n'){
+            stCommandLine[comIdx].lineBuf[idx + i + 1] = 0;
+            stCommandLine[comIdx].idx = 0;
+            len = strlen((const char*)&stCommandLine[comIdx].lineBuf[0]);
+            memcpy(&stCdcTxBuf[comIdx][0], &stCommandLine[comIdx].lineBuf[0], len);
+            Usbd_StartNextTransfer(USB_CDC0_DATAINEP_ADDR + (comIdx * 2), USB_IOC_ENABLE, len);
+            break;
+        }
+    }
+    if (i == size){
+        stCommandLine[comIdx].idx += size;
+    }
+    Usbd_StartNextTransfer(USB_CDC0_DATAOUTEP_ADDR + (comIdx * 2), USB_IOC_ENABLE, sizeof(stCdcRxBuf[comIdx]));
+}
+
+static void dataInHandler(uint8_t comIdx, uint16_t size)
+{
+    
+}
+
+static void vcom0CmdHandler(uint16_t size)
+{
+    cmdHandler(0, size);
+}
+
+static void vcom1CmdHandler(uint16_t size)
+{
+    cmdHandler(1, size);
+}
+
+static void cdc0DataOutHandler(uint16_t size)
+{
+    dataOutHandler(0, size);
+}
+
+static void cdc1DataOutHandler(uint16_t size)
+{
+    dataOutHandler(1, size);
+}
+
+static void cdc0DataInHandler(uint16_t size)
+{
+    dataInHandler(0, size);
+}
+
+static void cdc1DataInHandler(uint16_t size)
+{
+    dataInHandler(1, size);
+}
+
+
 void InitDualVcom(void)
 {
     Usbd_SysInit();
@@ -106,6 +181,16 @@ void InitDualVcom(void)
     }
     UsbdDualVcom_InitDescriptor();
     Usbd_SetClassRequestHandler(setupHandler, dataStatHandler);
+    Usbd_SetConfiguredFunc(configured);
+
+    Usbd_OpenEndpoint(USB_VCOM0_CMDEP_ADDR, USB_VCOM_CMDEP_ATTR, USB_VCOM_CMDEP_MPS, 0, &stCmdBuf[0][0], vcom0CmdHandler);
+    Usbd_OpenEndpoint(USB_VCOM1_CMDEP_ADDR, USB_VCOM_CMDEP_ATTR, USB_VCOM_CMDEP_MPS, 0, &stCmdBuf[1][0], vcom1CmdHandler);
+
+    Usbd_OpenEndpoint(USB_CDC0_DATAOUTEP_ADDR, USB_CDC_DATAEP_ATTR, USB_CDC_DATAEP_MPS, 0, &stCdcRxBuf[0][0], cdc0DataOutHandler);
+    Usbd_OpenEndpoint(USB_CDC1_DATAOUTEP_ADDR, USB_CDC_DATAEP_ATTR, USB_CDC_DATAEP_MPS, 0, &stCdcRxBuf[1][0], cdc1DataOutHandler);
+
+    Usbd_OpenEndpoint(USB_CDC0_DATAINEP_ADDR, USB_CDC_DATAEP_ATTR, USB_CDC_DATAEP_MPS, 0, &stCdcTxBuf[0][0], cdc0DataInHandler);
+    Usbd_OpenEndpoint(USB_CDC1_DATAINEP_ADDR, USB_CDC_DATAEP_ATTR, USB_CDC_DATAEP_MPS, 0, &stCdcTxBuf[1][0], cdc1DataInHandler);
 
     Usbd_SysStart();
 }

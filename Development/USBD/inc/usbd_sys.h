@@ -162,6 +162,7 @@ typedef enum{
 	USBD_DISABLED_EP = -2,
 	USBD_UNSUPPORTED_REQ = -3,
 	USBD_BUFFER_OVER = -4,
+	USBD_USED = -5,
 }usbDcd_Status_t;
 
 typedef struct{
@@ -212,6 +213,7 @@ typedef struct{
 	usbDcd_Descriptor_Info_t otherSpdConfigDesc;
 	usbDcd_Request_Set_t classSpec;
 	usbDcd_Request_Set_t vendorSpec;
+	void (*notifyConfigured)(void);
 }usbDcd_Device_info_t;
 
 #define USBD_dTD_Token_Active	0x80
@@ -234,10 +236,12 @@ void Usbd_SysInit(void);
 void Usbd_SysStart(void);
 void Usbd_SetDescriptor(int descType, const uint8_t* descPtr, uint16_t descSize);
 void Usbd_SetStringDescriptor(usbDcd_Descriptor_Info_t* descArray, uint8_t maxIndex);
+usbDcd_Status_t Usbd_OpenEndpoint(uint8_t epNum, int txType, uint16_t mps, uint8_t mult, void* bufPtr, void func(uint16_t));
 usbDcd_Status_t Usbd_StartNextTransfer(uint8_t epNum, bool ioc, uint16_t txSize);
 void Usbd_SetEpStall(uint8_t epNum);
 usbDcd_Status_t Usbd_ReadEp0Buffer(void* buf, uint16_t size);
 usbDcd_Status_t Usbd_WriteEp0Buffer(void* buf, uint16_t size);
 void Usbd_SetClassRequestHandler (usbDcd_Status_t setupfunc(usb_SetupPacket_t*), usbDcd_Status_t dataFunc(usbDcd_Control_Dir_t));
+void Usbd_SetConfiguredFunc(void func(void));
 
 #endif /*__USBD_SYS_H__*/

@@ -82,7 +82,7 @@ __ALIGNED(4)
     USB_CLASS_COM,                      /*bInterfaceClass*/
     USB_SUBCLASS_COM_ACM,               /*bInterfaceSubclass*/
     USB_PROTOCOL_COM_AT,                /*bInterfaceProtocol*/
-    USB_UNDEF,                          /*iInterface*/
+    STRDESC_IDX_VCOM0,                  /*iInterface*/
 
     /*Functional Descriptor[0]*/
     /*Header Functional Descriptor*/
@@ -173,7 +173,7 @@ __ALIGNED(4)
     USB_CLASS_COM,                      /*bInterfaceClass*/
     USB_SUBCLASS_COM_ACM,               /*bInterfaceSubclass*/
     USB_PROTOCOL_COM_AT,                /*bInterfaceProtocol*/
-    USB_UNDEF,                          /*iInterface*/
+    STRDESC_IDX_VCOM1,                  /*iInterface*/
 
     /*Functional Descriptor[0]*/
     /*Header Functional Descriptor*/
@@ -468,7 +468,17 @@ __ALIGNED(4)
 #endif
 /*static*/ uint8_t stStringSerialDescriptor[USB_STRING_MAX_SIZE] = {0};
 
-/*static*/ usbDcd_Descriptor_Info_t stStringArray[4] = {
+#ifndef VSCODE
+__ALIGNED(4)
+#endif
+/*static*/ uint8_t stStringVcom0IntfDescriptor[USB_STRING_MAX_SIZE] = {0};
+
+#ifndef VSCODE
+__ALIGNED(4)
+#endif
+/*static*/ uint8_t stStringVcom1IntfDescriptor[USB_STRING_MAX_SIZE] = {0};
+
+/*static*/ usbDcd_Descriptor_Info_t stStringArray[6] = {
     {
         .descriptor = stStringLangDescriptor,
         .size = USB_LANGDESC_SIZE,
@@ -485,12 +495,22 @@ __ALIGNED(4)
         .descriptor = stStringSerialDescriptor,
         .size = 0,
     },
+    {
+        .descriptor = stStringVcom0IntfDescriptor,
+        .size = 0,
+    },
+    {
+        .descriptor = stStringVcom1IntfDescriptor,
+        .size = 0,
+    },
+
 };
 
 /*static*/ const char stManufacturer[] = "NXP Semiconductor";
 /*static*/ const char stProduct[] = "FRDMMCXN947 Experiment";
 /*static*/ const char stSerial[] = "21248931";
-
+/*static*/ const char stVcom0If[] = "MCXN947 VCOM#0";
+/*static*/ const char stVcom1If[] = "MCXN947 VCOM#1";
 
 static int32_t setupStringDesc(uint8_t* desc, const char* string)
 {
@@ -525,6 +545,14 @@ int32_t UsbdDualVcom_InitDescriptor(void)
         return ret;
     }
     ret = setupStringDesc(stStringSerialDescriptor, stSerial);
+    if (ret){
+        return ret;
+    }
+    ret = setupStringDesc(stStringVcom0IntfDescriptor, stVcom0If);
+    if (ret){
+        return ret;
+    }
+    ret = setupStringDesc(stStringVcom1IntfDescriptor, stVcom1If);
     if (ret){
         return ret;
     }

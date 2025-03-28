@@ -460,9 +460,14 @@ static void ep0InHandler(uint16_t size)
                 }
                 case(BREQ_SET_CONFIGURATION):{
                     /*Status Stage Completed*/
+                    uint32_t epCtrl;
                     device()->busState = CONFIGURED;
                     for (int i = 1; i < USBD_MAX_EP_NUM; i++){
-                        UDEV->ENDPTCTRL[i - i] = (device()->rxEp[i].epCtrl_RegVal | device()->txEp[i].epCtrl_RegVal);
+                        epCtrl = device()->rxEp[i].epCtrl_RegVal | device()->txEp[i].epCtrl_RegVal;
+                        UDEV->ENDPTCTRL[i - 1] = epCtrl;
+                    }
+                    if (device()->notifyConfigured){
+                        device()->notifyConfigured();
                     }
                     break;
                 }
@@ -682,6 +687,35 @@ void Usbd_SetStringDescriptor(usbDcd_Descriptor_Info_t* descArray, uint8_t maxIn
 
 usbDcd_Status_t Usbd_OpenEndpoint(uint8_t epNum, int txType, uint16_t mps, uint8_t mult, void* bufPtr, void func(uint16_t))
 {
+    usbDcd_Endpoint_Info_t* ep;
+    uint8_t epIdx = (epNum & 0xF);
+    uint8_t epDir = (epNum & 0x80) >> 7;
+    uint8_t dci;
+
+    if ((epIdx >= USBD_MAX_EP_NUM) || (epIdx == 0)){
+        return USBD_INVALID_PARAM;
+    }
+
+    if (epDir){
+        ep = &device()->txEp[epIdx];
+    } else {
+        ep = &device()->rxEp[epIdx];
+    }
+    
+    if (ep->doesExist){
+        return USBD_USED;
+    }
+
+    ep->doesExist = 1;
+    ep->bufPtr = bufPtr;
+    ep->handlerCallback = func;
+    ep->epCtrl_RegVal = ((USBHS_ENDPTCTRL_RXE_MASK | USBHS_ENDPTCTRL_RXR_MASK | USBHS_ENDPTCTRL_RXT(txType)) << (USBHS_ENDPTCTRL_TXS_SHIFT * epDir));
+    
+    dci = epNumToDCI(epNum);
+    st_dQH[dci].nextdTDPointer = USBD_dQH_dTD_T;
+    st_dQH[dci].endpointCapability.BIT.maximumPacketLength = mps;
+    st_dQH[dci].endpointCapability.BIT.mult = mult;
+
     return USBD_OK;
 }
 
@@ -768,4 +802,9 @@ void Usbd_SetClassRequestHandler (usbDcd_Status_t setupfunc(usb_SetupPacket_t*),
 {
     device()->classSpec.setupHandler = setupfunc;
     device()->classSpec.dataStatHandler = dataFunc;
+}
+
+void Usbd_SetConfiguredFunc(void func(void))
+{
+    device()->notifyConfigured = func;
 }
