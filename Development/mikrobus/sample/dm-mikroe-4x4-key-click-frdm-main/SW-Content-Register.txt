@@ -1,0 +1,8 @@
+Release Name:           dm-mikroe-4x4-key-click-frdm
+Release Version:        1.0
+Outgoing License:       BSD-3-clause
+License File:           Licence
+Description:            Demo is an example for Mikroe 4x4 Key Click module in FRDM boards with CMSIS driver and NXP HAL Software.
+Release location:       https://github.com/nxp-appcodehub/dm-mikroe-4x4-key-click-frdm
+Origin:                 NXP (BSD-3-clause)
+                        ARM CMSIS v5.9.0 (Apache-2.0) - https://github.com/ARM-software/CMSIS_5/releases/tag/5.9.0

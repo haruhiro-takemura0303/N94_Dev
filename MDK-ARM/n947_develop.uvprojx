@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities;.\NXP\frdmmcxn947_hello_world_cm33_core0\component;.\NXP\frdmmcxn947_hello_world_cm33_core0\board;.\NXP\frdmmcxn947_hello_world_cm33_core0\component\uart;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\debug_console_lite;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\str;..\Development\USBD\inc</IncludePath>
+              <IncludePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities;.\NXP\frdmmcxn947_hello_world_cm33_core0\component;.\NXP\frdmmcxn947_hello_world_cm33_core0\board;.\NXP\frdmmcxn947_hello_world_cm33_core0\component\uart;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\debug_console_lite;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\str;..\Development\USBD\inc;..\Development\mikrobus\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -413,6 +413,26 @@
               <FileName>usbd_dual_vcom.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\USBD\src\usbd_dual_vcom.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>mikroBUS</GroupName>
+          <Files>
+            <File>
+              <FileName>mb_lpspi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\mikrobus\src\mb_lpspi.c</FilePath>
+            </File>
+            <File>
+              <FileName>mb_pin.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\mikrobus\src\mb_pin.c</FilePath>
+            </File>
+            <File>
+              <FileName>mikrobus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\mikrobus\src\mikrobus.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -508,6 +528,26 @@
               <FileName>fsl_spc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_spc.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_edma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_edma.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_edma_soc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_edma_soc.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_lpspi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_lpspi.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_lpspi_edma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_lpspi_edma.c</FilePath>
             </File>
           </Files>
         </Group>

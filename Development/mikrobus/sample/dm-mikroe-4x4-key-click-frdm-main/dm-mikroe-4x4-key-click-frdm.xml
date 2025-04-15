@@ -1,0 +1,39 @@
+<data:item xmlns:data="data" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="data ../../xsd/alp.xsd" type="demo" format="projectfile" versionSchema="1.0.0" name="MIKROE 4x4 Key Click FRDM" uuid="7647b9a7-925c-4e64-bfa2-2558940b5978">
+    <display_title>
+        4x4 Key Click: multi-platform ecosystem.
+    </display_title>
+    <overview>
+        <![CDATA[Demo is an example for MIKROE 4x4 Key Click module in FRDM boards with CMSIS driver and NXP HAL Software.]]>
+    </overview>
+    <toolchains>
+        <toolchain name="mcux"></toolchain>
+        <toolchain name="vscode"></toolchain>
+    </toolchains>
+    <families>
+        <family name="rw61x"></family>
+        <family name="mcx"></family>
+    </families>
+    <nxp_compatible_hw>
+        <hw id="FRDM-MCXW71"></hw>
+        <hw id="FRDM-MCXA153"></hw>
+        <hw id="FRDM-MCXA156"></hw>
+        <hw id="FRDM-MCXC041"></hw>
+        <hw id="FRDM-MCXC242"></hw>
+        <hw id="FRDM-MCXC444"></hw>
+        <hw id="FRDM-RW612"></hw>
+        <hw id="FRDM-MCXN947"></hw>
+        <hw id="FRDM-MCXN236"></hw>
+    </nxp_compatible_hw>
+    <nxp_ebh_hw>
+        <ebh id="mikroe_4x4_key_click"></ebh>
+    </nxp_ebh_hw>
+    <peripherals>
+        <peripheral name="gpio"></peripheral>
+        <peripheral name="spi"></peripheral>
+    </peripherals>
+    <categories>
+        <category name="tools"></category>
+        <category name="hmi"></category>
+        <category name="industrial"></category>
+    </categories>
+</data:item>
