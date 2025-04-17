@@ -11,6 +11,7 @@ void InitMikroBUS(void)
   InitMikroBusPort(DEFUALT_MIKROBUS);
 	GPIO1->PSOR = GPIO_PSOR_PTSO3_MASK;
 	GPIO1->PCOR = GPIO_PCOR_PTCO3_MASK;
-	for (int i = 0; i < 200000; i++){}
-  InitMikroBusSPI();
+	for (int i = 0; i < 200000; i++){
+	}
+  InitCapTouch2(DEFUALT_MIKROBUS, eDMA_INST0, eDMA_CH0, eDMA_CH1);
 }

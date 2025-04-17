@@ -10,7 +10,7 @@
       <TargetName>TZ_Disabled</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>6190000::V6.19::ARMCLANG</pCCUsed>
+      <pCCUsed>6230000::V6.23::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -420,11 +420,6 @@
           <GroupName>mikroBUS</GroupName>
           <Files>
             <File>
-              <FileName>mb_lpspi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Development\mikrobus\src\mb_lpspi.c</FilePath>
-            </File>
-            <File>
               <FileName>mb_pin.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\mikrobus\src\mb_pin.c</FilePath>
@@ -433,6 +428,11 @@
               <FileName>mikrobus.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\mikrobus\src\mikrobus.c</FilePath>
+            </File>
+            <File>
+              <FileName>mb_captouch2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\mikrobus\src\mb_captouch2.c</FilePath>
             </File>
           </Files>
         </Group>
