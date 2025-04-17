@@ -195,6 +195,22 @@ typedef struct{
 /** \} */
 
 /**
+ * \defgroup  Sensor Input interrupt
+ * \{
+ */
+#define CAPTOUCH2_GEN_STAT_TOUCH					0x01
+
+#define CAPTOUCH2_SENS_INPUT1							0x01
+#define CAPTOUCH2_SENS_INPUT2							0x02
+#define CAPTOUCH2_SENS_INPUT3							0x04
+#define CAPTOUCH2_SENS_INPUT4							0x08
+#define CAPTOUCH2_SENS_INPUT5							0x10
+#define CAPTOUCH2_SENS_INPUT6							0x20
+
+/** \} */
+
+
+/**
  * \defgroup configuration_2  Configuration 2 
  * \{
  */

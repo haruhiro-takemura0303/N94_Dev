@@ -19,8 +19,15 @@
    </preferences>
    <tools>
       <pins name="Pins" version="17.0" enabled="true" update_project_code="true">
+         <generated_project_files>
+            <file path="source/pin_mux.c" update_enabled="true"/>
+            <file path="source/pin_mux.h" update_enabled="true"/>
+         </generated_project_files>
          <pins_profile>
             <processor_version>24.12.10</processor_version>
+            <pin_labels>
+               <pin_label pin_num="L13" pin_signal="PIO5_7/TRIG_IN11/TAMPER5/ADC1_B15" label="P5_7/J5[2]" identifier="INT;ALERT"/>
+            </pin_labels>
          </pins_profile>
          <functions_list>
             <function name="BOARD_InitPins">
@@ -41,12 +48,22 @@
                         <data>true</data>
                      </feature>
                   </dependency>
+                  <dependency resourceType="Peripheral" resourceId="GPIO5" description="Peripheral GPIO5 signals are routed in the Pins Tool, but the peripheral is not initialized in the Peripherals Tool." problem_level="1" source="Pins:BOARD_InitPins">
+                     <feature name="initialized" evaluation="equal">
+                        <data>true</data>
+                     </feature>
+                  </dependency>
                   <dependency resourceType="SWComponent" resourceId="platform.drivers.common" description="Pins initialization requires the COMMON Driver in the project." problem_level="2" source="Pins:BOARD_InitPins">
                      <feature name="enabled" evaluation="equal" configuration="cm33_core0">
                         <data>true</data>
                      </feature>
                   </dependency>
                   <dependency resourceType="SWComponent" resourceId="platform.drivers.port" description="Pins initialization requires the PORT Driver in the project." problem_level="2" source="Pins:BOARD_InitPins">
+                     <feature name="enabled" evaluation="equal" configuration="cm33_core0">
+                        <data>true</data>
+                     </feature>
+                  </dependency>
+                  <dependency resourceType="SWComponent" resourceId="platform.drivers.gpio" description="Pins initialization requires the GPIO Driver in the project." problem_level="2" source="Pins:BOARD_InitPins">
                      <feature name="enabled" evaluation="equal" configuration="cm33_core0">
                         <data>true</data>
                      </feature>
@@ -89,11 +106,25 @@
                         <pin_feature name="invert_input" value="normal"/>
                      </pin_features>
                   </pin>
+                  <pin peripheral="GPIO5" signal="GPIO, 7" pin_num="L13" pin_signal="PIO5_7/TRIG_IN11/TAMPER5/ADC1_B15">
+                     <pin_features>
+                        <pin_feature name="identifier" value="ALERT"/>
+                        <pin_feature name="direction" value="INPUT"/>
+                        <pin_feature name="gpio_per_interrupt" value="kGPIO_InterruptFallingEdge"/>
+                        <pin_feature name="open_drain" value="enable"/>
+                        <pin_feature name="pull_select" value="up"/>
+                        <pin_feature name="pull_enable" value="enable"/>
+                     </pin_features>
+                  </pin>
                </pins>
             </function>
          </functions_list>
       </pins>
       <clocks name="Clocks" version="15.0" enabled="true" update_project_code="true">
+         <generated_project_files>
+            <file path="board/clock_config.c" update_enabled="true"/>
+            <file path="board/clock_config.h" update_enabled="true"/>
+         </generated_project_files>
          <clocks_profile>
             <processor_version>24.12.10</processor_version>
          </clocks_profile>
@@ -406,19 +437,112 @@
          </clock_configurations>
       </clocks>
       <dcdx name="DCDx" version="4.0" enabled="false" update_project_code="true">
+         <generated_project_files/>
          <dcdx_profile>
             <processor_version>N/A</processor_version>
          </dcdx_profile>
          <dcdx_configurations/>
       </dcdx>
-      <periphs name="Peripherals" version="15.0" enabled="false" update_project_code="true">
+      <periphs name="Peripherals" version="15.0" enabled="true" update_project_code="true">
+         <dependencies>
+            <dependency resourceType="SWComponent" resourceId="platform.drivers.gpio" description="GPIO Driver is not found in the toolchain/IDE project. The project will not compile!" problem_level="2" source="Peripherals">
+               <feature name="enabled" evaluation="equal">
+                  <data type="Boolean">true</data>
+               </feature>
+            </dependency>
+            <dependency resourceType="SWComponent" resourceId="platform.drivers.gpio" description="An unsupported version of the GPIO Driver in the toolchain/IDE project. Required: ${required_value}, actual: ${actual_value}. The project might not compile correctly." problem_level="1" source="Peripherals">
+               <feature name="version" evaluation="equivalent">
+                  <data type="Version">2.7.0</data>
+               </feature>
+            </dependency>
+            <dependency resourceType="Tool" resourceId="Pins" description="The Pins tool is required by the Peripherals tool, but it is disabled." problem_level="2" source="Peripherals">
+               <feature name="enabled" evaluation="equal">
+                  <data>true</data>
+               </feature>
+            </dependency>
+         </dependencies>
+         <generated_project_files>
+            <file path="board/peripherals.c" update_enabled="true"/>
+            <file path="board/peripherals.h" update_enabled="true"/>
+         </generated_project_files>
          <peripherals_profile>
-            <processor_version>N/A</processor_version>
+            <processor_version>24.12.10</processor_version>
          </peripherals_profile>
-         <functional_groups/>
-         <components/>
+         <functional_groups>
+            <functional_group name="BOARD_InitPeripherals" uuid="8417a06e-d295-477c-b86e-ea69ac832e50" called_from_default_init="true" id_prefix="" core="cm33_core0">
+               <description></description>
+               <options/>
+               <dependencies/>
+               <instances>
+                  <instance name="NVIC" uuid="b202f029-2057-4ff6-8284-82004627ed2f" type="nvic" type_id="nvic" mode="general" peripheral="NVIC" enabled="true" comment="" custom_name_enabled="false" editing_lock="false">
+                     <config_set name="nvic">
+                        <array name="interrupt_table">
+                           <struct name="0"/>
+                        </array>
+                        <array name="interrupts"/>
+                     </config_set>
+                  </instance>
+                  <instance name="GPIO5" uuid="501b90bb-fab4-4e81-a09a-712cca41967d" type="gpio" type_id="gpio_2.7.0" mode="GPIO" peripheral="GPIO5" enabled="true" comment="" custom_name_enabled="false" editing_lock="false">
+                     <config_set name="fsl_gpio">
+                        <setting name="enable_irq" value="true"/>
+                        <struct name="port_interrupt">
+                           <setting name="IRQn" value="GPIO50_IRQn"/>
+                           <setting name="enable_interrrupt" value="enabled"/>
+                           <setting name="enable_priority" value="true"/>
+                           <setting name="priority" value="2"/>
+                           <setting name="enable_custom_name" value="false"/>
+                        </struct>
+                        <setting name="enable_irq_1" value="false"/>
+                        <struct name="gpio_interrupt_1">
+                           <setting name="IRQn" value="GPIO01_IRQn"/>
+                           <setting name="enable_interrrupt" value="enabled"/>
+                           <setting name="enable_priority" value="false"/>
+                           <setting name="priority" value="1"/>
+                           <setting name="enable_custom_name" value="false"/>
+                        </struct>
+                        <setting name="enable_irq_EFT" value="false"/>
+                        <struct name="port_interrupt_EFT">
+                           <setting name="IRQn" value="noInt"/>
+                           <setting name="enable_interrrupt" value="enabled"/>
+                           <setting name="enable_priority" value="false"/>
+                           <setting name="priority" value="2"/>
+                           <setting name="enable_custom_name" value="false"/>
+                        </struct>
+                     </config_set>
+                  </instance>
+               </instances>
+            </functional_group>
+         </functional_groups>
+         <components>
+            <component name="system" uuid="c68245cf-bb0d-43ef-a017-99668d6eb0d8" type_id="system">
+               <config_set_global name="global_system_definitions">
+                  <setting name="user_definitions" value=""/>
+                  <setting name="user_includes" value=""/>
+                  <setting name="global_init" value=""/>
+               </config_set_global>
+            </component>
+            <component name="uart_cmsis_common" uuid="b9ab6edb-e402-4206-a45d-622fc3461b30" type_id="uart_cmsis_common">
+               <config_set_global name="global_USART_CMSIS_common" quick_selection="default"/>
+            </component>
+            <component name="msg" uuid="12ce7664-ca4f-4f83-88e4-9ea0429320db" type_id="msg">
+               <config_set_global name="global_messages"/>
+            </component>
+            <component name="gpio_adapter_common" uuid="99c4a6b3-a0ea-4945-9df1-b7df87352deb" type_id="gpio_adapter_common">
+               <config_set_global name="global_gpio_adapter_common" quick_selection="default"/>
+            </component>
+            <component name="generic_uart" uuid="bdb408c2-8089-4487-b3e9-d3d3acc8aeda" type_id="generic_uart">
+               <config_set_global name="global_uart"/>
+            </component>
+            <component name="generic_enet" uuid="4418ab2e-6882-4ff8-8ef6-aaa955158d34" type_id="generic_enet">
+               <config_set_global name="global_enet"/>
+            </component>
+            <component name="generic_can" uuid="fde46738-7f9e-433b-98b8-4acbf8ceffab" type_id="generic_can">
+               <config_set_global name="global_can"/>
+            </component>
+         </components>
       </periphs>
       <tee name="TEE" version="8.0" enabled="false" update_project_code="true">
+         <generated_project_files/>
          <tee_profile>
             <processor_version>N/A</processor_version>
          </tee_profile>

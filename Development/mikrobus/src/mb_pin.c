@@ -25,11 +25,32 @@ static void lpspi6_InitPins(void)
    GPIO_PinInit(BOARD_INITPINS_RST_GPIO, BOARD_INITPINS_RST_PIN, &RST_config);
 
    gpio_pin_config_t INT_config = {
-       .pinDirection = kGPIO_DigitalOutput,
+       .pinDirection = kGPIO_DigitalInput,
        .outputLogic = 0U
    };
    /* Initialize GPIO functionality on pin PIO5_7 (pin L13)  */
    GPIO_PinInit(BOARD_INITPINS_INT_GPIO, BOARD_INITPINS_INT_PIN, &INT_config);
+
+  
+   PORT5->PCR[7] =
+        ((PORT5->PCR[7] &
+          /* Mask bits to zero which are setting */
+          (~(PORT_PCR_PS_MASK | PORT_PCR_PE_MASK | PORT_PCR_ODE_MASK | PORT_PCR_MUX_MASK | PORT_PCR_IBE_MASK)))
+
+         /* Pull Select: Enables internal pullup resistor. */
+         | PORT_PCR_PS(PCR_PS_ps1)
+
+         /* Pull Enable: Enables. */
+         | PORT_PCR_PE(1)
+
+         /* Open Drain Enable: Enables. */
+         | PORT_PCR_ODE(1)
+
+         /* Pin Multiplex Control: PORT5_7 (pin L13) is configured as PIO5_7. */
+         | PORT_PCR_MUX(PORT5_PCR_MUX_mux00)
+
+         /* Input Buffer Enable: Enables. */
+         | PORT_PCR_IBE(PCR_IBE_ibe1));
 
    /* PORT1_3 (pin B4) is configured as PIO1_3, WUU0_IN7 */
    PORT_SetPinMux(BOARD_INITPINS_RST_PORT, BOARD_INITPINS_RST_PIN, kPORT_MuxAlt0);

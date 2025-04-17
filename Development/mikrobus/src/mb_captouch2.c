@@ -6,6 +6,8 @@
 
 #include "mb_captouch2.h"
 
+#include "board.h"
+
 ct2_txField_t s_txDataBuf = {
   .rst0 = 0x7A,
   .rst1 = 0x7A,
@@ -376,15 +378,68 @@ void rxTask_VDIHandler(void)
     if (ret){
       return;
     }
+		switch(rxBuf.FIELD.firstReg){
+			case(CAPTOUCH2_GEN_STATUS_REG):{
+				if (rxBuf.FIELD.readSize != CT2_READ_3BYTE){
+					break;
+				}
+				uint8_t genStat = rxBuf.FIELD.regValue[0];
+				uint8_t sensor = rxBuf.FIELD.regValue[1];
+				uint8_t led = rxBuf.FIELD.regValue[2];
+				if (genStat & CAPTOUCH2_GEN_STAT_TOUCH){
+					if (sensor & CAPTOUCH2_SENS_INPUT1){
+						LED_BLUE_ON();
+					}
+					if (sensor & CAPTOUCH2_SENS_INPUT2){
+						LED_GREEN_ON();
+					}
+					if (sensor & CAPTOUCH2_SENS_INPUT3){
+						LED_RED_ON();
+					}
+					if (sensor & CAPTOUCH2_SENS_INPUT4){
+						LED_BLUE_ON();
+						LED_GREEN_ON();
+					}
+					if (sensor & CAPTOUCH2_SENS_INPUT5){
+						LED_BLUE_ON();
+						LED_RED_ON();
+					}
+					if (sensor & CAPTOUCH2_SENS_INPUT6){
+						LED_GREEN_ON();
+						LED_BLUE_ON();
+						LED_RED_ON();
+					}
+				} else {
+					LED_BLUE_OFF();
+					LED_RED_OFF();
+					LED_GREEN_OFF();
+				}
+				break;
+			}
+		}
     
 
   }
+}
+
+void GPIO50_IRQHandler(void)
+{
+  if (GPIO5->ISFR[0] & GPIO_ISFR_ISF7_MASK){
+    GPIO5->ISFR[0] = GPIO_ISFR_ISF7_MASK;
+		sendRequest(CAPTOUCH2_MAIN_CONTROL_REG, 0x00, CT2_WRITE);
+		sendRequest(CAPTOUCH2_GEN_STATUS_REG, 0, CT2_READ_3BYTE);
+  }
+  
 }
 
 void InitCapTouch2(mikrobus_hdr_t hdr, uint8_t instNum, uint8_t txCh, uint8_t rxCh)
 {
 	initLpspi(hdr);
 	initDma(instNum, txCh, rxCh);
+
+  GPIO_SetPinInterruptConfig(BOARD_INITPINS_INT_GPIO, BOARD_INITPINS_INT_PIN, kGPIO_InterruptFallingEdge);
+  NVIC_SetPriority(GPIO50_IRQn, 2);
+  NVIC_EnableIRQ(GPIO50_IRQn);
 
 	
   sendRequest(CAPTOUCH2_LED_BEHAVIOR1_REG, 
