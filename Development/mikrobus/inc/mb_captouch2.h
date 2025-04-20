@@ -15,8 +15,8 @@
 #define CT2_SPI_FIFO_SIZE 32
 #define CT2_RX_FIFO_SIZE 32
 
-#define rxTask_VDIHandler DAC0_IRQHandler
-#define rxTask_VDIn DAC0_IRQn
+#define ct2RxTask_VDIHandler DAC0_IRQHandler
+#define ct2RxTask_VDIn DAC0_IRQn
 
 enum{
     CT2_WRITE = 0,

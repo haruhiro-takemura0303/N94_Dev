@@ -10,14 +10,10 @@
 #define G2_I2C_SLAVEADDR_READ   ((G2_I2C_SLAVEADDR << 1) | kLPI2C_Read)
 #define G2_I2C_SLAVEADDR_WRITE  ((G2_I2C_SLAVEADDR << 1) | kLPI2C_Write)
 
-uint16_t testTxBuf[] = {kI2C_GenStartAndSendAddress | G2_I2C_SLAVEADDR_WRITE, 
-                        kI2C_TransmitData | 0x0C, 
-                        kI2C_GenStartAndSendAddress | G2_I2C_SLAVEADDR_READ,
-                        kI2C_ReceiveData | 0x00,
-                        kI2C_GenStop
-                      };
-
-uint16_t testRxBuf[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+g2_txField_t s_gtxDataBuf = {
+  .stSlvAddr = kI2C_GenStartAndSendAddress | G2_I2C_SLAVEADDR_WRITE
+};
+uint8_t s_grxDataBuf[6];
 
 static LPI2C_Type* s_lpi2c;
 static LP_FLEXCOMM_Type* s_lpflexcomm;
@@ -28,6 +24,15 @@ static uint8_t s_DmaRxCh;
 static uint8_t s_DmaTxCh;
 static uint8_t s_IrqReg;
 static uint32_t s_IrqMask;
+
+struct{
+  float X;
+  float Y;
+  float Z;
+}g_AngularData;
+
+g2_fifo_t s_gTxFifo;
+g2_rx_fifo_t s_gRxFifo;
 
 static inline LPI2C_Type* i2c(void)
 {
@@ -53,6 +58,131 @@ static inline void g2_disint(void)
 static inline void g2_enaint(void)
 {
   NVIC->ISER[s_IrqReg] = s_IrqMask;
+}
+
+static void startI2c(uint8_t rw)
+{
+  i2c()->MCR = (i2c()->MCR | (LPI2C_MCR_RTF_MASK | LPI2C_MCR_RRF_MASK));
+	if (!rw){
+		i2c()->MDER = LPI2C_MDER_TDDE_MASK;
+	} else {
+		i2c()->MDER = LPI2C_MDER_RDDE_MASK | LPI2C_MDER_TDDE_MASK;
+	}
+}
+
+static void hookTx(g2_tx_t txCmd)
+{
+  if (txCmd.FIELD.readSize > G2_MAX_READ_BURST_SIZE){
+    return;
+  }
+  s_gtxDataBuf.regAddr = txCmd.FIELD.regAddr;
+
+  if (!txCmd.FIELD.readSize){
+    s_gtxDataBuf.RW.WRITE.regValue = txCmd.FIELD.regValue;
+    s_gtxDataBuf.RW.WRITE.sp = kI2C_GenStop;
+    edma()->CH[s_DmaTxCh].TCD_BITER_ELINKNO = 4;
+    edma()->CH[s_DmaTxCh].TCD_CITER_ELINKNO = 4;
+    edma()->CH[s_DmaTxCh].TCD_SLAST_SDA = -8;
+    edma()->CH[s_DmaTxCh].TCD_CSR |= DMA_CSR_INTMAJOR_MASK;
+    edma()->CH[s_DmaTxCh].CH_CSR |= DMA_CH_CSR_ERQ_MASK;
+  } else {
+    s_gtxDataBuf.RW.READ.srSlvAddr = (kI2C_GenStartAndSendAddress | G2_I2C_SLAVEADDR_READ);
+    s_gtxDataBuf.RW.READ.readCmd_Size = (kI2C_ReceiveData | (txCmd.FIELD.readSize - 1));
+    s_gtxDataBuf.RW.READ.sp = kI2C_GenStop;
+    edma()->CH[s_DmaTxCh].TCD_BITER_ELINKNO = 5;
+    edma()->CH[s_DmaTxCh].TCD_CITER_ELINKNO = 5;
+    edma()->CH[s_DmaTxCh].TCD_SLAST_SDA = -10;
+    edma()->CH[s_DmaTxCh].TCD_CSR &= ~DMA_CSR_INTMAJOR_MASK;
+
+    edma()->CH[s_DmaRxCh].TCD_BITER_ELINKNO = txCmd.FIELD.readSize;
+    edma()->CH[s_DmaRxCh].TCD_CITER_ELINKNO = txCmd.FIELD.readSize;
+    edma()->CH[s_DmaRxCh].TCD_DLAST_SGA = (-1 * txCmd.FIELD.readSize);
+    edma()->CH[s_DmaRxCh].TCD_CSR |= DMA_CSR_INTMAJOR_MASK;
+
+    edma()->CH[s_DmaRxCh].CH_CSR |= DMA_CH_CSR_ERQ_MASK;
+    edma()->CH[s_DmaTxCh].CH_CSR |= DMA_CH_CSR_ERQ_MASK;
+  }
+
+  startI2c(txCmd.FIELD.readSize);
+}
+
+static int32_t enqueueRx(g2_rx_t* rxResult)
+{
+  uint8_t eIdx;
+  uint8_t dIdx;
+  
+  eIdx = s_gRxFifo.enqIdx;
+  dIdx = s_gRxFifo.deqIdx;
+  
+  if ((dIdx - eIdx) == 1){
+    return -1;
+  }
+
+  s_gRxFifo.fifo[eIdx].WORD[0] = rxResult->WORD[0];
+  s_gRxFifo.fifo[eIdx].WORD[1] = rxResult->WORD[1];
+
+  eIdx = (eIdx + 1) % G2_RX_FIFO_SIZE;
+  s_gRxFifo.enqIdx = eIdx;
+  NVIC_SetPendingIRQ(g2RxTask_VDIn);
+  return 0;  
+}
+
+static int32_t dequeueRx(g2_rx_t* rxBuf)
+{
+  uint8_t eIdx;
+  uint8_t dIdx;
+  g2_disint();
+  eIdx = s_gRxFifo.enqIdx;
+  dIdx = s_gRxFifo.deqIdx;
+  
+  if (dIdx == eIdx){
+    g2_enaint();
+    return -1;
+  }
+
+  rxBuf->WORD[0] = s_gRxFifo.fifo[dIdx].WORD[0];
+  rxBuf->WORD[1] = s_gRxFifo.fifo[dIdx].WORD[1];
+
+  dIdx = (dIdx + 1) % G2_RX_FIFO_SIZE;
+  s_gRxFifo.deqIdx = dIdx;
+  g2_enaint();
+  return 0;  
+}
+
+static int32_t enqueueRequest(g2_tx_t txCmd)
+{
+  uint8_t eIdx;
+  uint8_t dIdx;
+  g2_disint();
+  eIdx = s_gTxFifo.enqIdx;
+  dIdx = s_gTxFifo.deqIdx;
+  
+  if ((dIdx - eIdx) == 1){
+    g2_enaint();
+    return -1;
+  }
+
+  s_gTxFifo.fifo[eIdx].WORD = txCmd.WORD;
+
+  if (eIdx == dIdx){
+    hookTx(txCmd);
+  }
+
+  eIdx = (eIdx + 1) % G2_I2C_FIFO_SIZE;
+  s_gTxFifo.enqIdx = eIdx;
+  g2_enaint();
+  return 0;
+}
+
+static int32_t sendRequest(uint8_t regAddr, uint8_t regValue, uint8_t readSize)
+{
+	g2_tx_t txCmd = {
+		.FIELD.regAddr = regAddr,
+		.FIELD.regValue = regValue,
+		.FIELD.readSize = readSize	
+	};
+	
+	return enqueueRequest(txCmd);
 }
 
 void initLpi2c(mikrobus_hdr_t hdr)
@@ -118,16 +248,13 @@ static void initDma(uint8_t instNum, uint8_t txCh, uint8_t rxCh)
   edma()->CH[txCh].CH_CSR = (DMA_CH_CSR_DONE_MASK | DMA_CH_CSR_EEI_MASK);
   edma()->CH[txCh].CH_MUX = s_TxDreq;
 
-  edma()->CH[txCh].TCD_SADDR = (uint32_t)&testTxBuf[0];
+  edma()->CH[txCh].TCD_SADDR = (uint32_t)&s_gtxDataBuf.stSlvAddr;
   edma()->CH[txCh].TCD_SOFF = 2;
   edma()->CH[txCh].TCD_DADDR = (uint32_t)&i2c()->MTDR;
   edma()->CH[txCh].TCD_DOFF = 0;
   edma()->CH[txCh].TCD_DLAST_SGA = 0;
   edma()->CH[txCh].TCD_ATTR = (DMA_ATTR_SSIZE(kEDMA_TransferSize2Bytes) | DMA_ATTR_DSIZE(kEDMA_TransferSize2Bytes));
-  edma()->CH[txCh].TCD_CITER_ELINKNO = 5;
-  edma()->CH[txCh].TCD_BITER_ELINKNO = 5;
   edma()->CH[txCh].TCD_NBYTES_MLOFFNO = 2;
-  edma()->CH[txCh].TCD_SLAST_SDA = -10;
   edma()->CH[txCh].TCD_CSR = DMA_CSR_DREQ_MASK;
 
   /*LPSPI Rx DMA*/
@@ -138,58 +265,118 @@ static void initDma(uint8_t instNum, uint8_t txCh, uint8_t rxCh)
 
   edma()->CH[rxCh].TCD_SADDR = (uint32_t)&i2c()->MRDR;
   edma()->CH[rxCh].TCD_SOFF = 0;
-  edma()->CH[rxCh].TCD_DADDR = (uint32_t)&testRxBuf[0];
-  edma()->CH[rxCh].TCD_DOFF = 2;
-  edma()->CH[rxCh].TCD_DLAST_SGA = -2;
+  edma()->CH[rxCh].TCD_DADDR = (uint32_t)&s_grxDataBuf[0];
+  edma()->CH[rxCh].TCD_DOFF = 1;
   edma()->CH[rxCh].TCD_ATTR = (DMA_ATTR_SSIZE(kEDMA_TransferSize1Bytes) | DMA_ATTR_DSIZE(kEDMA_TransferSize1Bytes));
-  edma()->CH[rxCh].TCD_CITER_ELINKNO = 1;
-  edma()->CH[rxCh].TCD_BITER_ELINKNO = 1;
   edma()->CH[rxCh].TCD_NBYTES_MLOFFNO = 1;
   edma()->CH[rxCh].TCD_SLAST_SDA = 0;
-  edma()->CH[rxCh].TCD_CSR = (DMA_CSR_DREQ_MASK | DMA_CSR_INTMAJOR_MASK);
+  edma()->CH[rxCh].TCD_CSR = DMA_CSR_DREQ_MASK;
 
   NVIC_SetPriority(EDMA_0_CH2_IRQn, 1);
   NVIC_EnableIRQ(EDMA_0_CH2_IRQn);
   NVIC_SetPriority(EDMA_0_CH3_IRQn, 1);
   NVIC_EnableIRQ(EDMA_0_CH3_IRQn);
 
-  //NVIC_SetPriority(rxTask_VDIn, 3);
-  //NVIC_EnableIRQ(rxTask_VDIn);
+  NVIC_SetPriority(g2RxTask_VDIn, 3);
+  NVIC_EnableIRQ(g2RxTask_VDIn);
 }
 
-//uint16_t rxCount;
-//uint16_t txCount;
+void EDMA_0_CH2_IRQHandler(void)
+{
+  uint8_t eIdx = s_gTxFifo.enqIdx;
+  uint8_t dIdx = s_gTxFifo.deqIdx;
+
+	edma()->CH[s_DmaTxCh].CH_INT = DMA_CH_INT_INT_MASK;
+	i2c()->MDER = 0;
+
+  dIdx = (dIdx + 1) % G2_I2C_FIFO_SIZE;
+  s_gTxFifo.deqIdx = dIdx;
+  s_gTxFifo.enqIdx = eIdx;
+
+  if (dIdx != eIdx){
+    hookTx(s_gTxFifo.fifo[dIdx]);
+  }
+}
 
 void EDMA_0_CH3_IRQHandler(void)
 {
+  uint8_t eIdx = s_gTxFifo.enqIdx;
+  uint8_t dIdx = s_gTxFifo.deqIdx;
+  g2_tx_t txCmd;
+  g2_rx_t rxResult;
 
 	edma()->CH[s_DmaRxCh].CH_INT = DMA_CH_INT_INT_MASK;
 	i2c()->MDER = 0;
+	
+  txCmd.WORD = s_gTxFifo.fifo[dIdx].WORD;
+  rxResult.FIELD.firstReg = txCmd.FIELD.regAddr;
+  rxResult.FIELD.readSize = txCmd.FIELD.readSize;
+  for (int i = 0; i < txCmd.FIELD.readSize; i++){
+    rxResult.FIELD.regValue[i] = s_grxDataBuf[i];
+  }
+  enqueueRx(&rxResult);
+
+  dIdx = (dIdx + 1) % G2_I2C_FIFO_SIZE;
+  s_gTxFifo.deqIdx = dIdx;
+  s_gTxFifo.enqIdx = eIdx;
+
+  if (dIdx != eIdx){
+    hookTx(s_gTxFifo.fifo[dIdx]);
+  }
 }
 
-void ReadTest()
+void g2RxTask_VDIHandler(void)
 {
-  /*for (int i = 0; i < 5; i++){
-    i2c()->MTDR = testTxBuf[i];
+  g2_rx_t rxBuf;
+  int ret;
+
+  NVIC_ClearPendingIRQ(g2RxTask_VDIn);
+
+  for (;;){
+    ret = dequeueRx(&rxBuf);
+    if (ret){
+      return;
+    }
+		switch(rxBuf.FIELD.firstReg){
+			case(GYRO2_OUT_X_MSB):{
+        int16_t xRaw, yRaw, zRaw;
+        xRaw = (uint16_t)(rxBuf.FIELD.regValue[0] << 8) | rxBuf.FIELD.regValue[1];
+        yRaw = (uint16_t)(rxBuf.FIELD.regValue[2] << 8) | rxBuf.FIELD.regValue[3];
+        zRaw = (uint16_t)(rxBuf.FIELD.regValue[4] << 8) | rxBuf.FIELD.regValue[5];
+        g_AngularData.X = xRaw * 0.015625f / 88.0f * 3.0f;
+        g_AngularData.Y = yRaw * 0.015625f / 88.0f * 3.0f;
+        g_AngularData.Z = zRaw * 0.015625f / 88.0f * 3.0f;
+        break;
+      }
+		}
+
   }
-	txCount = (i2c()->MFSR & LPI2C_MFSR_TXCOUNT_MASK) >> LPI2C_MFSR_TXCOUNT_SHIFT;
-  rxCount = (i2c()->MFSR & LPI2C_MFSR_RXCOUNT_MASK) >> LPI2C_MFSR_RXCOUNT_SHIFT;
-	while (rxCount == 0){
-		rxCount = (i2c()->MFSR & LPI2C_MFSR_RXCOUNT_MASK) >> LPI2C_MFSR_RXCOUNT_SHIFT;
-	}
-  for (int i = 0; i < rxCount; i++){
-    testRxBuf[i] = (i2c()->MRDR & 0xFF);
-  }*/
-	i2c()->MCR |= (LPI2C_MCR_RTF_MASK | LPI2C_MCR_RRF_MASK);
-  edma()->CH[s_DmaTxCh].CH_CSR |= DMA_CH_CSR_ERQ_MASK;
-  edma()->CH[s_DmaRxCh].CH_CSR |= DMA_CH_CSR_ERQ_MASK;
-  i2c()->MDER = (LPI2C_MDER_RDDE_MASK | LPI2C_MDER_TDDE_MASK);
-  
+}
+
+void GPIO50_IRQHandler(void)
+{
+  if (GPIO5->ISFR[0] & GPIO_ISFR_ISF7_MASK){
+    GPIO5->ISFR[0] = GPIO_ISFR_ISF7_MASK;
+    sendRequest(GYRO2_OUT_X_MSB, 0, G2_READ_6BYTE);
+  } 
 }
 
 void InitGyro2(mikrobus_hdr_t hdr, uint8_t instNum, uint8_t txCh, uint8_t rxCh)
 {
   initLpi2c(hdr);
   initDma(instNum, txCh, rxCh);
-	ReadTest();
+
+  GPIO_SetPinInterruptConfig(BOARD_INITPINS_INT_GPIO, BOARD_INITPINS_INT_PIN, kGPIO_InterruptFallingEdge);
+  NVIC_SetPriority(GPIO50_IRQn, 2);
+  NVIC_EnableIRQ(GPIO50_IRQn);
+
+  sendRequest(GYRO2_RT_CFG, (GYRO2_RT_CFG_XTEFE | GYRO2_RT_CFG_YTEFE | GYRO2_RT_CFG_ZTEFE), G2_WRITE);
+  sendRequest(GYRO2_RT_THS, 10, G2_WRITE);
+  sendRequest(GYRO2_CTRL_REG1, ((GYRO2_DR_50Hz << 2) | GYRO2_ACTIVE), G2_WRITE);
+  sendRequest(GYRO2_CTRL_REG2, (GYRO2_INT_CFG_DRDY_INT1 | GYRO2_INT_EN_DRDY | GYRO2_PP_OD_OS | GYRO2_IPOL_ACTIVE_LO), G2_WRITE);
+  sendRequest(GYRO2_CTRL_REG0, (GYRO2_LO_PASS_MOD2 | GYRO2_HI_PASS_OFF | GYRO2_SCALE_3), G2_WRITE);
+
+  sendRequest(GYRO2_CTRL_REG0, 0, G2_READ_6BYTE);
+  sendRequest(GYRO2_CTRL_REG1, 0, G2_READ_3BYTE);
+
 }

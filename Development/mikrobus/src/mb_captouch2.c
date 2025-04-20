@@ -8,12 +8,12 @@
 
 #include "board.h"
 
-ct2_txField_t s_txDataBuf = {
+static ct2_txField_t s_txDataBuf = {
   .rst0 = 0x7A,
   .rst1 = 0x7A,
   .addrSet = 0x7D,
 };
-ct2_rxField_t s_rxDataBuf;
+static ct2_rxField_t s_rxDataBuf;
 static LPSPI_Type* s_lpspi;
 static LP_FLEXCOMM_Type* s_lpflexcomm;
 static DMA_Type* s_edma;
@@ -24,8 +24,8 @@ static uint8_t s_DmaTxCh;
 static uint8_t s_IrqReg;
 static uint32_t s_IrqMask;
 
-ct2_fifo_t s_TxFifo;
-ct2_rx_fifo_t s_RxFifo;
+static ct2_fifo_t s_TxFifo;
+static ct2_rx_fifo_t s_RxFifo;
 
 static inline LPSPI_Type* spi(void)
 {
@@ -144,7 +144,7 @@ static int32_t enqueueRx(ct2_rx_t* rxResult)
 
   eIdx = (eIdx + 1) % CT2_RX_FIFO_SIZE;
   s_RxFifo.enqIdx = eIdx;
-  NVIC_SetPendingIRQ(rxTask_VDIn);
+  NVIC_SetPendingIRQ(ct2RxTask_VDIn);
   return 0;  
 }
 
@@ -311,8 +311,8 @@ static void initDma(uint8_t instNum, uint8_t txCh, uint8_t rxCh)
   NVIC_SetPriority(EDMA_0_CH1_IRQn, 1);
   NVIC_EnableIRQ(EDMA_0_CH1_IRQn);
 
-  NVIC_SetPriority(rxTask_VDIn, 3);
-  NVIC_EnableIRQ(rxTask_VDIn);
+  NVIC_SetPriority(ct2RxTask_VDIn, 3);
+  NVIC_EnableIRQ(ct2RxTask_VDIn);
 }
 
 void EDMA_0_CH0_IRQHandler(void)
@@ -371,7 +371,7 @@ void rxTask_VDIHandler(void)
   ct2_rx_t rxBuf;
   int ret;
 
-  NVIC_ClearPendingIRQ(rxTask_VDIn);
+  NVIC_ClearPendingIRQ(ct2RxTask_VDIn);
 
   for (;;){
     ret = dequeueRx(&rxBuf);
@@ -422,7 +422,7 @@ void rxTask_VDIHandler(void)
   }
 }
 
-void GPIO50_IRQHandler(void)
+/*void GPIO50_IRQHandler(void)
 {
   if (GPIO5->ISFR[0] & GPIO_ISFR_ISF7_MASK){
     GPIO5->ISFR[0] = GPIO_ISFR_ISF7_MASK;
@@ -430,7 +430,7 @@ void GPIO50_IRQHandler(void)
 		sendRequest(CAPTOUCH2_GEN_STATUS_REG, 0, CT2_READ_3BYTE);
   }
   
-}
+}*/
 
 void InitCapTouch2(mikrobus_hdr_t hdr, uint8_t instNum, uint8_t txCh, uint8_t rxCh)
 {
