@@ -3,6 +3,7 @@
 #define __MIKROBUS_H__
 
 #include "mb_captouch2.h"
+#include "mb_gyro2.h"
 #include "mb_pin.h"
 
 enum{

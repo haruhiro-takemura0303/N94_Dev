@@ -1,0 +1,32 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/Users/Masayuki Kobayashi/AppData/Local/Arm/Packs/ARM/CMSIS/6.1.0/CMSIS/Core/Include",
+                "C:/Users/Masayuki Kobayashi/AppData/Local/Arm/Packs/NXP/MCXN947_DFP/19.0.0/devices/MCXN947",
+                "C:/Users/Masayuki Kobayashi/AppData/Local/Keil_v5/ARM/ARMCLANG/include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "__CC_ARM",
+                "__ICCARM__",
+                "__UVISION_VERSION=542",
+                "CPU_MCXN947VDF_cm33_core0",
+                "MCXN947",
+                "__STATIC_INLINE= static inline",
+                "__ARMCC_VERSION=6010050",
+                "__PACKED_STRUCT= struct __attribute__((packed, aligned(1)))",
+                "VSCODE"
+            ],
+            "configurationProvider": "cmsis-csolution",
+            "intelliSenseMode": "windows-gcc-x86",
+            "cStandard": "c23",
+            "cppStandard": "c++23"
+        }
+    ],
+    "version": 4
+}

@@ -1,0 +1,37 @@
+<data:item xmlns:data="data" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="data ../../xsd/alp.xsd" type="demo" format="projectfile" versionSchema="1.0.0" name="mikroe oledBclick frdm" uuid="75c4a720-2654-4041-b430-1b990eca03f0">
+    <display_title>
+        Demo of mikroe oledBclick in FRDM with CMSIS driver and GPIO adapter
+    </display_title>
+    <overview>
+        <![CDATA[Demo is an example for Mikroe OLED B click module in FRDM boards with CMSIS driver and GPIO adapter.]]>
+    </overview>
+    <toolchains>
+        <toolchain name="mcux"></toolchain>
+        <toolchain name="vscode"></toolchain>
+    </toolchains>
+    <families>
+        <family name="mcx"></family>
+        <family name="rw61x"></family>
+    </families>
+    <nxp_compatible_hw>
+        <hw id="FRDM-MCXN947"></hw>
+        <hw id="FRDM-RW612"></hw>
+        <hw id="FRDM-MCXW71"></hw>
+        <hw id="FRDM-MCXA153"></hw>
+        <hw id="FRDM-MCXA156"></hw>
+        <hw id="FRDM-MCXC041"></hw>
+        <hw id="FRDM-MCXC242"></hw>
+        <hw id="FRDM-MCXC444"></hw>
+        <hw id="FRDM-MCXN236"></hw>
+    </nxp_compatible_hw>
+    <peripherals>
+        <peripheral name="gpio"></peripheral>
+        <peripheral name="i2c"></peripheral>
+        <peripheral name="uart"></peripheral>
+    </peripherals>
+    <categories>
+        <category name="graphics"></category>
+        <category name="hmi"></category>
+        <category name="ui"></category>
+    </categories>
+</data:item>

@@ -434,6 +434,11 @@
               <FileType>1</FileType>
               <FilePath>..\Development\mikrobus\src\mb_captouch2.c</FilePath>
             </File>
+            <File>
+              <FileName>mb_gyro2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\mikrobus\src\mb_gyro2.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -548,6 +553,11 @@
               <FileName>fsl_lpspi_edma.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_lpspi_edma.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_lpi2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_lpi2c.c</FilePath>
             </File>
           </Files>
         </Group>
