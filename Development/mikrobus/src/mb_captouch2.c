@@ -206,7 +206,7 @@ static int32_t sendRequest(uint8_t regAddr, uint8_t regValue, uint8_t readSize)
 	return enqueueRequest(txCmd);
 }
 
-void initLpspi(mikrobus_hdr_t hdr)
+static void initLpspi(mikrobus_hdr_t hdr)
 {
   switch(hdr){
     case(DEFUALT_MIKROBUS):{
@@ -252,7 +252,7 @@ void initLpspi(mikrobus_hdr_t hdr)
 
 }
 
-void initDma(uint8_t instNum, uint8_t txCh, uint8_t rxCh)
+static void initDma(uint8_t instNum, uint8_t txCh, uint8_t rxCh)
 {
   if (instNum == 0){
     CLOCK_EnableClock(kCLOCK_Dma0);
