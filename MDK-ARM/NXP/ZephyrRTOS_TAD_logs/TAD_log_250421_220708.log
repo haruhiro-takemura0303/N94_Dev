@@ -1,0 +1,12 @@
+"Task Aware Debugger for GDB" version 24.12.0 (202407110909)
+Copyright 2016-2023 NXP
+==================================
+22:06:51.150 INFO: [ZephyrRTOS] .config file could not be read [C:\CM_Dev\N94_Dev\MDK-ARM\NXP\frdmmcxn947_hello_world_cm33_core0\Debug\.config (指定されたファイルが見つかりません。)]
+22:06:51.150 INFO: [TadModel] DSF session ID 1 has started.
+22:06:55.131 INFO: [TadState] TAD state changed: DEBUG_STARTED -> DEBUG_INIT_0 (RESUMED, USER_REQUEST)
+22:06:55.148 INFO: [TadState] TAD state changed: DEBUG_INIT_0 -> DEBUG_INIT_1 (SUSPENDED, SIGNAL)
+22:06:57.21 INFO: [TadState] TAD state changed: DEBUG_INIT_1 -> DEBUG_SUSPENDED (RESUMED, USER_REQUEST)
+22:06:57.66 INFO: [TadState] TAD state changed: DEBUG_SUSPENDED -> DEBUG_SUSPENDED (SUSPENDED, BREAKPOINT)
+22:07:05.456 INFO: [TadState] TAD state changed: DEBUG_SUSPENDED -> DEBUG_RESUMED (RESUMED, USER_REQUEST)
+22:07:06.409 INFO: [TadState] TAD state changed: DEBUG_RESUMED -> READY (SUSPENDED, SIGNAL)
+22:07:08.606 INFO: [TadModel] DSF session ID 1 has ended.

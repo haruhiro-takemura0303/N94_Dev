@@ -11,6 +11,8 @@
  **********************************************************************************************************************/
 #include "fsl_common.h"
 #include "fsl_gpio.h"
+#include "fsl_ctimer.h"
+#include "fsl_clock.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -30,6 +32,19 @@ extern "C" {
 #define GPIO5_INT_0_IRQ_PRIORITY 2
 /* GPIO5 interrupt handler identifier. */
 #define GPIO5_INT_0_IRQHANDLER GPIO50_IRQHandler
+/* Definition of peripheral ID */
+#define CTIMER0_PERIPHERAL CTIMER0
+/* Timer tick frequency in Hz (input frequency of the timer) */
+#define CTIMER0_TICK_FREQ 12000000UL
+/* Timer tick period in ns (input period of the timer) */
+#define CTIMER0_TICK_PERIOD 83UL
+/* Definition of PWM period channel. */
+#define CTIMER0_PWM_PERIOD_CH kCTIMER_Match_0
+
+/***********************************************************************************************************************
+ * Global variables
+ **********************************************************************************************************************/
+extern const ctimer_config_t CTIMER0_config;
 
 /***********************************************************************************************************************
  * Initialization functions

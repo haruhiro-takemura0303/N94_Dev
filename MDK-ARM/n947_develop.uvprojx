@@ -559,6 +559,11 @@
               <FileType>1</FileType>
               <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_lpi2c.c</FilePath>
             </File>
+            <File>
+              <FileName>fsl_ctimer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_ctimer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -335,6 +335,7 @@
                <clock_outputs>
                   <clock_output id="CLK_144M_clock.outFreq" value="144 MHz" locked="false" accuracy=""/>
                   <clock_output id="CLK_48M_clock.outFreq" value="48 MHz" locked="false" accuracy=""/>
+                  <clock_output id="CTIMER0_clock.outFreq" value="12 MHz" locked="false" accuracy=""/>
                   <clock_output id="FRO_12M_clock.outFreq" value="12 MHz" locked="false" accuracy=""/>
                   <clock_output id="FRO_HF_clock.outFreq" value="48 MHz" locked="false" accuracy=""/>
                   <clock_output id="MAIN_clock.outFreq" value="150 MHz" locked="false" accuracy=""/>
@@ -348,10 +349,12 @@
                   <setting id="PLL0_Mode" value="Normal" locked="false"/>
                   <setting id="RunPowerMode" value="OD" locked="false"/>
                   <setting id="SCGMode" value="PLL0" locked="false"/>
+                  <setting id="CTIMER0CLKDIV_HALT" value="Enable" locked="false"/>
                   <setting id="SCG.PLL0M_MULT.scale" value="50" locked="true"/>
                   <setting id="SCG.PLL0SRCSEL.sel" value="SCG.FIRC_48M" locked="false"/>
                   <setting id="SCG.PLL0_NDIV.scale" value="8" locked="true"/>
                   <setting id="SCG.SCSSEL.sel" value="SCG.PLL0_CLK" locked="false"/>
+                  <setting id="SYSCON.CTIMERCLKSEL0.sel" value="SCG.FRO_12M" locked="false"/>
                   <setting id="SYSCON.FLEXSPICLKSEL.sel" value="NO_CLOCK" locked="false"/>
                   <setting id="SYSCON.FREQMEREFCLKSEL.sel" value="SYSCON.evtg_out0a" locked="false"/>
                   <setting id="SYSCON.FREQMETARGETCLKSEL.sel" value="SYSCON.evtg_out0a" locked="false"/>
@@ -455,9 +458,14 @@
                   <data type="Version">2.7.0</data>
                </feature>
             </dependency>
-            <dependency resourceType="Tool" resourceId="Pins" description="The Pins tool is required by the Peripherals tool, but it is disabled." problem_level="2" source="Peripherals">
+            <dependency resourceType="SWComponent" resourceId="platform.drivers.ctimer" description="CTimer Driver is not found in the toolchain/IDE project. The project will not compile!" problem_level="2" source="Peripherals">
                <feature name="enabled" evaluation="equal">
-                  <data>true</data>
+                  <data type="Boolean">true</data>
+               </feature>
+            </dependency>
+            <dependency resourceType="SWComponent" resourceId="platform.drivers.ctimer" description="An unsupported version of the CTimer Driver in the toolchain/IDE project. Required: ${required_value}, actual: ${actual_value}. The project might not compile correctly." problem_level="1" source="Peripherals">
+               <feature name="version" evaluation="greaterOrEqual">
+                  <data type="Version" maxValue="2.3.9">2.2.2</data>
                </feature>
             </dependency>
          </dependencies>
@@ -472,7 +480,13 @@
             <functional_group name="BOARD_InitPeripherals" uuid="8417a06e-d295-477c-b86e-ea69ac832e50" called_from_default_init="true" id_prefix="" core="cm33_core0">
                <description></description>
                <options/>
-               <dependencies/>
+               <dependencies>
+                  <dependency resourceType="ClockOutput" resourceId="CTIMER0_clock" description="CTIMER0_clock is inactive." problem_level="2" source="Peripherals:BOARD_InitPeripherals">
+                     <feature name="frequency" evaluation="greaterThan">
+                        <data type="Frequency" unit="Hz">0</data>
+                     </feature>
+                  </dependency>
+               </dependencies>
                <instances>
                   <instance name="NVIC" uuid="b202f029-2057-4ff6-8284-82004627ed2f" type="nvic" type_id="nvic" mode="general" peripheral="NVIC" enabled="true" comment="" custom_name_enabled="false" editing_lock="false">
                      <config_set name="nvic">
@@ -507,6 +521,27 @@
                            <setting name="enable_priority" value="false"/>
                            <setting name="priority" value="2"/>
                            <setting name="enable_custom_name" value="false"/>
+                        </struct>
+                     </config_set>
+                  </instance>
+                  <instance name="CTIMER0" uuid="948bcfd3-a7de-4eae-b677-48f31d42f7c9" type="ctimer" type_id="ctimer_2.2.2" mode="Capture_Match" peripheral="CTIMER0" enabled="true" comment="" custom_name_enabled="false" editing_lock="false">
+                     <config_set name="fsl_ctimer">
+                        <struct name="ctimerConfig">
+                           <setting name="mode" value="kCTIMER_TimerMode"/>
+                           <setting name="clockSource" value="FunctionClock"/>
+                           <setting name="clockSourceFreq" value="ClocksTool_DefaultInit"/>
+                           <setting name="timerPrescaler" value="1"/>
+                        </struct>
+                        <setting name="EnableTimerInInit" value="false"/>
+                        <array name="matchChannels"/>
+                        <array name="captureChannels"/>
+                        <struct name="interruptCallbackConfig">
+                           <struct name="interrupt">
+                              <setting name="IRQn" value="CTIMER0_IRQn"/>
+                              <setting name="enable_priority" value="false"/>
+                              <setting name="priority" value="0"/>
+                           </struct>
+                           <setting name="callback" value="kCTIMER_NoCallback"/>
                         </struct>
                      </config_set>
                   </instance>
