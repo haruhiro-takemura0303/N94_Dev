@@ -62,9 +62,17 @@
                                                     /* @} */
 
 typedef enum{
-  DEFUALT_MIKROBUS,
+  DEFAULT_MIKROBUS,
 } mikrobus_hdr_t;
 
-void InitMikroBusPort(mikrobus_hdr_t hdr);
+enum{
+	POL_LOW = 0,
+	POL_HIGH = 1,
+};
+
+void MikroBusPins_InitReset1_3(bool pol_default);
+void MikroBusPins_InitInt5_7(bool pol_default);
+void MikroBusPins_InitLPI2C3(void);
+void MikroBusPins_InitLPSPI6(void);
 
 #endif /*__MB_PIN_H__*/

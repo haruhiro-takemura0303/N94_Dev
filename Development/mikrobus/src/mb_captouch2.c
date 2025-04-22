@@ -14,6 +14,12 @@ static ct2_txField_t s_txDataBuf = {
   .addrSet = 0x7D,
 };
 static ct2_rxField_t s_rxDataBuf;
+
+static void txDmaIrqHandler(void);
+static void rxDmaIrqHandler(void);
+static void pinIntrIrqHandler(void);
+static void ct2RxTaskVdiHandler(void);
+
 static LPSPI_Type* s_lpspi;
 static LP_FLEXCOMM_Type* s_lpflexcomm;
 static DMA_Type* s_edma;
@@ -209,7 +215,8 @@ static int32_t sendRequest(uint8_t regAddr, uint8_t regValue, uint8_t readSize)
 static void initLpspi(mikrobus_hdr_t hdr)
 {
   switch(hdr){
-    case(DEFUALT_MIKROBUS):{
+    case(DEFAULT_MIKROBUS):{
+			MikroBusPins_InitLPSPI6();
       s_lpspi = LPSPI6;
       s_lpflexcomm = LP_FLEXCOMM6;
       s_TxDreq = kDma0RequestMuxLpFlexcomm6Tx;
@@ -254,18 +261,23 @@ static void initLpspi(mikrobus_hdr_t hdr)
 
 static void initDma(uint8_t instNum, uint8_t txCh, uint8_t rxCh)
 {
+  IRQn_Type txIrq, rxIrq;
   if (instNum == 0){
     CLOCK_EnableClock(kCLOCK_Dma0);
     RESET_ReleasePeripheralReset(kDMA0_RST_SHIFT_RSTn);
     s_IrqReg = 0;
     s_IrqMask = (1 << (txCh + 1)) | (1 << (rxCh + 1));
 		s_edma = DMA0;
+		txIrq = EDMA_0_CH0_IRQn + txCh;
+		rxIrq = EDMA_0_CH0_IRQn + rxCh;
   } else {
     CLOCK_EnableClock(kCLOCK_Dma1);
     RESET_ReleasePeripheralReset(kDMA1_RST_SHIFT_RSTn);    
     s_IrqReg = 2;
     s_IrqMask = (1 << (txCh + 13)) | (1 << (rxCh + 13));
 		s_edma = DMA1;
+		txIrq = EDMA_1_CH0_IRQn + txCh;
+		rxIrq = EDMA_1_CH0_IRQn + rxCh;
   }
   s_DmaTxCh = txCh;
   s_DmaRxCh = rxCh;
@@ -306,16 +318,20 @@ static void initDma(uint8_t instNum, uint8_t txCh, uint8_t rxCh)
   edma()->CH[rxCh].TCD_SLAST_SDA = 0;
   edma()->CH[rxCh].TCD_CSR = (DMA_CSR_DREQ_MASK);
 
-  NVIC_SetPriority(EDMA_0_CH0_IRQn, 1);
-  NVIC_EnableIRQ(EDMA_0_CH0_IRQn);
-  NVIC_SetPriority(EDMA_0_CH1_IRQn, 1);
-  NVIC_EnableIRQ(EDMA_0_CH1_IRQn);
+  NVIC_SetPriority(txIrq, 1);
+  NVIC_SetVector(txIrq, (uint32_t)txDmaIrqHandler);
+  NVIC_EnableIRQ(txIrq);
+
+  NVIC_SetPriority(rxIrq, 1);
+  NVIC_SetVector(rxIrq, (uint32_t)rxDmaIrqHandler);
+  NVIC_EnableIRQ(rxIrq);
 
   NVIC_SetPriority(ct2RxTask_VDIn, 3);
+  NVIC_SetVector(ct2RxTask_VDIn, (uint32_t)ct2RxTaskVdiHandler);
   NVIC_EnableIRQ(ct2RxTask_VDIn);
 }
 
-void EDMA_0_CH0_IRQHandler(void)
+static void txDmaIrqHandler(void)
 {
   uint8_t eIdx = s_TxFifo.enqIdx;
   uint8_t dIdx = s_TxFifo.deqIdx;
@@ -336,7 +352,7 @@ void EDMA_0_CH0_IRQHandler(void)
 
 }
 
-void EDMA_0_CH1_IRQHandler(void)
+static void rxDmaIrqHandler(void)
 {
   uint8_t eIdx = s_TxFifo.enqIdx;
   uint8_t dIdx = s_TxFifo.deqIdx;
@@ -366,7 +382,7 @@ void EDMA_0_CH1_IRQHandler(void)
   }
 }
 
-void rxTask_VDIHandler(void)
+static void ct2RxTaskVdiHandler(void)
 {
   ct2_rx_t rxBuf;
   int ret;
@@ -422,7 +438,7 @@ void rxTask_VDIHandler(void)
   }
 }
 
-/*void GPIO50_IRQHandler(void)
+static void pinIntrIrqHandler(void)
 {
   if (GPIO5->ISFR[0] & GPIO_ISFR_ISF7_MASK){
     GPIO5->ISFR[0] = GPIO_ISFR_ISF7_MASK;
@@ -430,16 +446,31 @@ void rxTask_VDIHandler(void)
 		sendRequest(CAPTOUCH2_GEN_STATUS_REG, 0, CT2_READ_3BYTE);
   }
   
-}*/
+}
 
 void InitCapTouch2(mikrobus_hdr_t hdr, uint8_t instNum, uint8_t txCh, uint8_t rxCh)
 {
+	switch(hdr){
+		case(DEFAULT_MIKROBUS):{
+			MikroBusPins_InitReset1_3(POL_LOW);
+			MikroBusPins_InitInt5_7(POL_HIGH);
+			
+			GPIO1->PSOR = GPIO_PSOR_PTSO3_MASK;
+			GPIO1->PCOR = GPIO_PCOR_PTCO3_MASK;
+			for (int i = 0; i < 200000; i++){
+			}
+			
+			GPIO_SetPinInterruptConfig(BOARD_INITPINS_INT_GPIO, BOARD_INITPINS_INT_PIN, kGPIO_InterruptFallingEdge);
+			NVIC_SetPriority(GPIO50_IRQn, 2);
+			NVIC_EnableIRQ(GPIO50_IRQn);
+			NVIC_SetVector(GPIO50_IRQn, (uint32_t)pinIntrIrqHandler);
+			
+			break;
+		}
+	}
+	
 	initLpspi(hdr);
 	initDma(instNum, txCh, rxCh);
-
-  GPIO_SetPinInterruptConfig(BOARD_INITPINS_INT_GPIO, BOARD_INITPINS_INT_PIN, kGPIO_InterruptFallingEdge);
-  NVIC_SetPriority(GPIO50_IRQn, 2);
-  NVIC_EnableIRQ(GPIO50_IRQn);
 
 	
   sendRequest(CAPTOUCH2_LED_BEHAVIOR1_REG, 

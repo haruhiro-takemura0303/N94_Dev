@@ -12,8 +12,26 @@
 
 #include "mikrobus.h"
 
+#define NUMOF_SYS_VECT	16
+#define NUMOF_EXT_VECT	156
+#define NUMOF_VECT			(NUMOF_SYS_VECT + NUMOF_EXT_VECT)
+
+__attribute__((section(".ramx"))) __ALIGNED(128) uint32_t vectorOnRam[NUMOF_VECT];
+
+static void sysInit(void)
+{
+	uint32_t* curVect = (uint32_t*)(SCB->VTOR);
+	for (int i = 0; i < NUMOF_VECT; i++){
+		vectorOnRam[i] = curVect[i];
+	}
+	SCB->VTOR = (uint32_t)(&vectorOnRam[0]);
+  __DSB();
+}
+
 int main (void)
 {
+	sysInit();
+	
 	BOARD_InitHardware();
 	LED_BLUE_OFF();
 	LED_RED_OFF();

@@ -16,4 +16,8 @@ LR_ROM1 0x00000000 0x00100000  {
   ARM_LIB_STACK 0x20060000 EMPTY -0x2000{  ; Stack region growing down
   
   }
+  
+  RW_RAMX	0x04000000	0x00018000 {
+  *(*.ramx)
+  }
 }

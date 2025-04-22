@@ -23,7 +23,6 @@ enum{
 #define G2_MAX_READ_BURST_SIZE 6
 
 #define g2RxTask_VDIn   DAC1_IRQn
-#define g2RxTask_VDIHandler DAC1_IRQHandler
 
 enum{
   G2_WRITE = 0,
