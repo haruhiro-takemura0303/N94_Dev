@@ -498,9 +498,9 @@ static void g2RxTaskVdiHandler(void)
         xRaw = (uint16_t)(rxBuf.FIELD.regValue[0] << 8) | rxBuf.FIELD.regValue[1];
         yRaw = (uint16_t)(rxBuf.FIELD.regValue[2] << 8) | rxBuf.FIELD.regValue[3];
         zRaw = (uint16_t)(rxBuf.FIELD.regValue[4] << 8) | rxBuf.FIELD.regValue[5];
-        dXnew = xRaw * 0.015625f / 88.0f * 3.0f;
-        dYnew = yRaw * 0.015625f / 88.0f * 3.0f;
-        dZnew = zRaw * 0.015625f / 88.0f * 3.0f;
+        dXnew = xRaw * 0.0625f;
+        dYnew = yRaw * 0.0625f;
+        dZnew = zRaw * 0.0625f;
 				g_AngularData.X += ((g_AngularData.dX + dXnew) * 0.005);
 				g_AngularData.Y += ((g_AngularData.dY + dYnew) * 0.005);
 				g_AngularData.Z += ((g_AngularData.dY + dZnew) * 0.005);
@@ -508,19 +508,19 @@ static void g2RxTaskVdiHandler(void)
 				g_AngularData.dY = dYnew;
 				g_AngularData.dZ = dZnew;
 				
-				xTimVal = (int16_t)(g_AngularData.X * 300.0f);
+				xTimVal = (int16_t)(g_AngularData.X * 12.0f);
 				if (xTimVal > 600){
 					xTimVal = 599;
 				} else if (xTimVal < -600){
 					xTimVal = -599;
 				}
-				yTimVal = (int16_t)(g_AngularData.Y * 300.0f);
+				yTimVal = (int16_t)(g_AngularData.Y * 12.0f);
 				if (yTimVal > 600){
 					yTimVal = 599;
 				} else if (yTimVal < -600){
 					yTimVal = -599;
 				}
-				zTimVal = (int16_t)(g_AngularData.Z * 300.0f);
+				zTimVal = (int16_t)(g_AngularData.Z * 12.0f);
 				if (zTimVal > 600){
 					zTimVal = 599;
 				} else if (zTimVal < -600){
@@ -574,6 +574,6 @@ void InitGyro2(mikrobus_hdr_t hdr, uint8_t instNum, uint8_t txCh, uint8_t rxCh)
   sendRequest(GYRO2_RT_THS, 10, G2_WRITE);
   sendRequest(GYRO2_CTRL_REG1, ((GYRO2_DR_100Hz << 2) | GYRO2_ACTIVE), G2_WRITE);
   sendRequest(GYRO2_CTRL_REG2, (GYRO2_INT_CFG_DRDY_INT1 | GYRO2_INT_EN_DRDY | GYRO2_PP_OD_OS | GYRO2_IPOL_ACTIVE_LO), G2_WRITE);
-  sendRequest(GYRO2_CTRL_REG0, (GYRO2_LO_PASS_MOD2 | GYRO2_HI_PASS_OFF | GYRO2_SCALE_3), G2_WRITE);
+  sendRequest(GYRO2_CTRL_REG0, (GYRO2_LO_PASS_MOD2 | GYRO2_HI_PASS_OFF | GYRO2_SCALE_0), G2_WRITE);
 	startTimer();
 }

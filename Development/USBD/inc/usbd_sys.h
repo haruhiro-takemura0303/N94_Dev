@@ -12,6 +12,9 @@
 #include "clock_config.h"
 #include "fsl_spc.h"
 
+#include "usb20.h"
+#include "usbphy.h"
+
 #define UDEV                          USBHS1__USBC
 
 #define USBD_MAX_EP_NUM 				8
@@ -21,102 +24,6 @@
 #define USBD_EP0_IN_DCI                 1
 #define USBD_EP0_OUT    		        0
 #define USBD_EP0_IN		                0x80
-
-typedef enum{
-    DISCONNECTED = 0,
-    ATTACHED,
-    DEFAULT,
-    ADDRESSED,
-    CONFIGURED
-} usb_BusState_t;
-
-typedef union{
-	struct{
-		struct{
-			uint8_t attr:5;
-			uint8_t type:2;
-			uint8_t dir:1;
-		} bmRequestType;
-		uint8_t bRequest;
-		uint16_t wValue;
-		uint16_t wIndex;
-		uint16_t wLength;
-	} BIT;
-	uint32_t DWORD[2];
-} usb_SetupPacket_t;
-
-enum {
-	BMREQ_DIR_OUT = 0,
-	BMREQ_DIR_IN
-};
-
-enum {
-	BMREQ_TYPE_STANDARD = 0,
-	BMREQ_TYPE_CLASS,
-	BMREQ_TYPE_VENDOR,
-};
-
-enum {
-	BMREQ_ATTR_DEVICE = 0,
-	BMREQ_ATTR_INTERFACE,
-	BMREQ_ATTR_ENDPOINT,
-	BMREQ_ATTR_OTHER,
-	BMREQ_ATTR_VENDOR = 31
-};
-
-enum{
-	BREQ_GET_STATUS = 0,
-	BREQ_CLEAR_FEATURE,
-	BREQ_SET_FEATURE = 3,
-	BREQ_SET_ADDRESS = 5,
-	BREQ_GET_DESCRIPTOR,
-	BREQ_SET_DESCRIPTOR,
-	BREQ_GET_CONFIGURATION,
-	BREQ_SET_CONFIGURATION,
-	BREQ_GET_INTERFACE,
-	BREQ_SET_INTERFACE,
-	BREQ_SYNCH_FRAME,
-	BREQ_SET_ENCRYPTION,
-	BREQ_GET_ENCRYPTION,
-	BREQ_SET_HANDSHAKE,
-	BREQ_GET_HANDSHAKE,
-	BREQ_SET_CONNECTION,
-	BREQ_SET_SECURITY_DATA,
-	BREQ_GET_SEQURITY_DATA,
-	BREQ_SET_WUSB_DATA,
-	BREQ_LOOPBACK_DATA_WRITE,
-	BREQ_LOOPBACK_DATA_READ,
-	BREQ_SET_INTERFACE_DS,
-	BREQ_SET_SEL = 48,
-	BREQ_SET_ISOCH_DELAY
-};
-
-enum{
-	FEATURE_ENDPOINT_HALT = 0,
-	FEATURE_DEV_REMOTE_WUP,
-	FEATURE_TEST_MODE
-};
-
-enum{
-	DESCTYPE_DEVICE = 1,
-	DESCTYPE_CONFIG = 2,
-    DESCTYPE_STRING = 3,
-	DESCTYPE_INTERFACE = 4,
-	DESCTYPE_ENDPOINT = 5,
-	DESCTYPE_DEVICE_QUALIFIER = 6,
-	DESCTYPE_OTHERSPD_CONFIG = 7,
-	DESCTYPE_INTERFACEASSOC = 11,
-    DESCTYPE_CSIF = 0x24,
-};
-
-enum{
-	TYPE_CONTROL = 0,
-	TYPE_ISOCHRONOUS,
-	TYPE_BULK,
-	TYPE_INTERRUPT
-};
-
-#define DEFAULT_EP		0
 
 typedef struct{
     union{
