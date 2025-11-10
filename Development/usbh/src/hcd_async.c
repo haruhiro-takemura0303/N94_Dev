@@ -1,8 +1,8 @@
 /**
- * @brief   MCXN947V USB Host Controller Simple Asynchronous Transfer Driver
- * @author  masa
- * @version 1.00 
- */
+* @brief   MCXN947V USB Host Controller Simple Asynchronous Transfer Driver
+* @author  masa
+* @version 1.00 
+*/
 
 #include "hcd_async.h"
 
@@ -63,17 +63,17 @@ static int32_t setEp0Transfer(uint8_t devAddr)
   usb_SetupPacket_t setup;
   int32_t idx = -1;
   ehci_qTD_t *setupqTD, *dataqTD, *statusqTD;
-  const hcd_Async_QH_Mgr_t* mgr;
-    
+  hcd_Async_QH_Mgr_t* mgr;
+  
   idx = getMgr(devAddr, 0, mgr);
   if (idx < 0){
     return -1;
   }
-
+  
   setupqTD = &st_qTD[mgr->setupIdx];
   dataqTD = &st_qTD[mgr->dataIdx];
   statusqTD = &st_qTD[mgr->mainTxIdx];
-
+  
   setup.DWORD[0] = mgr->bufPointer[0];
   setup.DWORD[1] = mgr->bufPointer[1];
   if (setup.BIT.bmRequestType.dir){
@@ -81,12 +81,12 @@ static int32_t setEp0Transfer(uint8_t devAddr)
     setupqTD->DWORD1_ANQP = (uint32_t)&dataqTD->DWORD0_NQP;
     setupqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_0 | EHCI_qTD_QTO_TBT(8) | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_SETUP | EHCI_qTD_QTO_Status_Active);
     setupqTD->DWORD3_BP0 = (uint32_t)(mgr->bufPointer);
-
+    
     dataqTD->DWORD0_NQP = (uint32_t)&statusqTD->DWORD0_NQP;
     dataqTD->DWORD1_ANQP = (uint32_t)&statusqTD->DWORD1_ANQP;
     dataqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_1 | EHCI_qTD_QTO_TBT(setup.BIT.wLength) | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_IN | EHCI_qTD_QTO_Status_Active);
     dataqTD->DWORD3_BP0 = (uint32_t)(&mgr->bufPointer[2]);
-
+    
     statusqTD->DWORD0_NQP = EHCI_qTD_NQP_T;
     statusqTD->DWORD1_ANQP = EHCI_qTD_ANQP_T;
     statusqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_1 | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_OUT | EHCI_qTD_QTO_IOC | EHCI_qTD_QTO_Status_Active);
@@ -96,12 +96,12 @@ static int32_t setEp0Transfer(uint8_t devAddr)
     setupqTD->DWORD1_ANQP = (uint32_t)&dataqTD->DWORD0_NQP;
     setupqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_0 | EHCI_qTD_QTO_TBT(8) | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_SETUP | EHCI_qTD_QTO_Status_Active);
     setupqTD->DWORD3_BP0 = (uint32_t)(mgr->bufPointer);
-
+    
     dataqTD->DWORD0_NQP = (uint32_t)&statusqTD->DWORD0_NQP;
     dataqTD->DWORD1_ANQP = (uint32_t)&statusqTD->DWORD1_ANQP;
     dataqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_1 | EHCI_qTD_QTO_TBT(setup.BIT.wLength) | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_OUT | EHCI_qTD_QTO_Status_Active);
     dataqTD->DWORD3_BP0 = (uint32_t)(&mgr->bufPointer[2]);
-
+    
     statusqTD->DWORD0_NQP = EHCI_qTD_NQP_T;
     statusqTD->DWORD1_ANQP = EHCI_qTD_ANQP_T;
     statusqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_1 | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_IN | EHCI_qTD_QTO_IOC | EHCI_qTD_QTO_Status_Active);
@@ -111,7 +111,7 @@ static int32_t setEp0Transfer(uint8_t devAddr)
     setupqTD->DWORD1_ANQP = (uint32_t)&statusqTD->DWORD0_NQP;
     setupqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_0 | EHCI_qTD_QTO_TBT(8) | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_SETUP | EHCI_qTD_QTO_Status_Active);
     setupqTD->DWORD3_BP0 = (uint32_t)(mgr->bufPointer);
-
+    
     statusqTD->DWORD0_NQP = EHCI_qTD_NQP_T;
     statusqTD->DWORD1_ANQP = EHCI_qTD_ANQP_T;
     statusqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_1 | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_IN | EHCI_qTD_QTO_IOC | EHCI_qTD_QTO_Status_Active);
@@ -131,7 +131,7 @@ static int32_t startTransfer(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
   if (idx < 0){
     return -1;
   }
-
+  
   QH = &st_QH[idx].QH;
   if (epNum == 0){
     setEp0Transfer(devAddr);
@@ -149,13 +149,13 @@ static int32_t startTransfer(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
     }
     qTD->DWORD3_BP0 = (uint32_t)mgr->bufPointer;
   }
-
+  
   mgr->lastTxSize = txLen;
   st_TxMap |= (1 << idx);
-
+  
   QH->DWORD4_NQLP = (uint32_t)(&qTD->DWORD0_NQP);
   QH->DWORD5_ANQLP = (uint32_t)(&qTD->DWORD0_NQP);
-
+  
   return 0;
 }
 
@@ -164,17 +164,36 @@ static int32_t setAddress(uint8_t devAddr)
   int32_t idx = -1;
   ehci_QH_t* QH;
   hcd_Async_QH_Mgr_t* mgr;
-
+  
   idx = getMgr(0, 0, mgr);
   if (idx < 0){
     return -1;
   }
   QH = &st_QH[idx].QH;
-
+  
   QH->DWORD1_EC0 &= ~EHCI_QH_EC0_DA(0x7F);
   QH->DWORD1_EC0 |= EHCI_QH_EC0_DA(devAddr);
-
+  
   return 0;
+}
+
+static int32_t setEp0Mps(uint8_t devAddr, uint16_t mps)
+{
+  int32_t idx = -1;
+  ehci_QH_t* QH;
+  hcd_Async_QH_Mgr_t* mgr;
+  
+  idx = getMgr(devAddr, 0, mgr);
+  if (idx < 0){
+    return -1;
+  }
+  QH = &st_QH[idx].QH;
+  
+  QH->DWORD1_EC0 &= ~EHCI_QH_EC0_MPL_Msk;
+  QH->DWORD1_EC0 |= EHCI_QH_EC0_MPL(mps);
+  
+  return 0;
+  
 }
 
 static int32_t enqueueMsg(hcd_Async_Msg_t* msg)
@@ -191,10 +210,10 @@ static int32_t enqueueMsg(hcd_Async_Msg_t* msg)
   } else {
     ret = -1;
   }
-
+  
   EHCI_EnaInt();
   NVIC_SetPendingIRQ(HcdAsync_IRQn);
-
+  
   return ret;
 }
 
@@ -220,23 +239,29 @@ static void usbIntProc(void)
 {
   uint16_t actTxLen;
   uint32_t txMap_tmp;
-  int32_t idx;
+  int32_t idx, qidx;
+  ehci_qTD_t* txqTD;
   if (st_TxMap == 0){
     return;
   }
-
+  
   txMap_tmp = st_TxMap;
-
+  
   while(txMap_tmp){
     idx = 31 - __CLZ(txMap_tmp);
     if ((*st_QHMgr[idx].iocPointer & EHCI_qTD_QTO_Status_Active) == 0){
       st_TxMap &= ~(1 << idx);
-      actTxLen = st_QHMgr[idx].lastTxSize - ((st_QH[idx].QH.DWORD6_QTO & EHCI_qTD_QTO_TBT_Msk) >> 16);
+      if (st_QHMgr[idx].epNum != 0){
+        qidx = st_QHMgr[idx].mainTxIdx;
+      } else {
+        qidx = st_QHMgr[idx].dataIdx;
+      }
+      actTxLen = st_QHMgr[idx].lastTxSize - ((st_qTD[qidx].DWORD2_QTO & EHCI_qTD_QTO_TBT_Msk) >> 16);
       st_QH[idx].completeCallback(st_QHMgr[idx].devAddr, st_QHMgr[idx].epNum, actTxLen);
     }
     txMap_tmp &= ~(1 << idx);
   }
-
+  
 }
 
 static void usbIntHandler(void)
@@ -270,23 +295,28 @@ static void asyncMainTask(void)
         setAddress(msg.devAddr);
         break;
       }
-      default:
+      case(ASYNC_SET_EP0_MPS):{
+        setEp0Mps(msg.devAddr, msg.ep0Mps);
         break;
+      }
+      default:
+      break;
     }
   }
 }
 
 
+
 void InitAsyncSchedule(void)
 {
   EHCI_SetCallback(USB_INT_ASYNC, usbIntHandler);
-
+  
   NVIC_SetVector(HcdAsync_IRQn, (uint32_t)asyncMainTask);
   NVIC_SetPriority(HcdAsync_IRQn, 4);
   NVIC_EnableIRQ(HcdAsync_IRQn);
-
+  
   for (int i = 0; i < HCD_ASYNC_NUM_OF_QH; i++){
-
+    
     st_QHMgr[i].state = HCD_UNUSED;
     st_QHMgr[i].devAddr = 0xFF;
     st_QHMgr[i].epNum = 0xFF;
@@ -295,7 +325,7 @@ void InitAsyncSchedule(void)
     st_QHMgr[i].dataIdx = 0xFF;
     st_QHMgr[i].bufPointer = 0;
     st_QHMgr[i].iocPointer = 0;
-
+    
     st_QH[i].QH.DWORD3_CQLP = EHCI_QH_NQLP_T;
     st_QH[i].QH.DWORD4_NQLP = EHCI_QH_NQLP_T;
     st_QH[i].QH.DWORD5_ANQLP = EHCI_QH_NQLP_T;
@@ -306,22 +336,22 @@ void InitAsyncSchedule(void)
       st_QH[i].QH.DWORD0_QHHLP = (EHCI_QH_QHHLP_QHHLP(((uint32_t)(&st_QH[i - 1].QH.DWORD0_QHHLP))) | EHCI_QH_QHHLP_TYP_QH);
     }
   }
-
-
+  
+  
   EHCI->ASYNCLISTADDR = (uint32_t)(&st_QH[0].QH.DWORD0_QHHLP);
   EHCI->USBCMD |= USBHS_USBCMD_ASE_MASK;
 }
 
-int32_t OpenAsyncEndpoint(uint8_t devAddr, uint8_t epNum, uint32_t* bufHead, usb_psiv_t psiv, uint16_t mps, uint8_t hubAddr, uint8_t hubPort, void func(uint8_t, uint8_t, uint16_t))
+int32_t OpenAsyncEndpoint(hcd_DeviceInfo_t* device, uint8_t epNum, uint32_t* bufHead, uint16_t mps, void func(uint8_t, uint8_t, uint16_t))
 {
   int32_t idx;
   ehci_QH_array_t* QH = 0;
   ehci_qTD_t* qTD = 0;
   hcd_Async_QH_Mgr_t* mgr;
   uint32_t speed;
-
+  
   EHCI_DisInt();
-
+  
   idx = getNewQH();
   if (idx < 0){
     EHCI_EnaInt();
@@ -329,54 +359,54 @@ int32_t OpenAsyncEndpoint(uint8_t devAddr, uint8_t epNum, uint32_t* bufHead, usb
   }
   mgr = &st_QHMgr[idx];
   QH = &st_QH[idx];
-
-  mgr->devAddr = devAddr;
+  
+  mgr->devAddr = device->devAddr;
   mgr->epNum = epNum;
   mgr->bufPointer = bufHead;
-
-  idx = getNewqTD(devAddr, epNum);
+  
+  idx = getNewqTD(device->devAddr, epNum);
   if (idx < 0){
     EHCI_EnaInt();
     return -2;
   }
-
+  
   mgr->mainTxIdx = idx;
   mgr->iocPointer = &st_qTD[idx].DWORD2_QTO;
-
+  
   QH->QH.DWORD1_EC0 &= EHCI_QH_EC0_H;
-
+  
   if (epNum == 0){
-    idx = getNewqTD(devAddr, epNum);
+    idx = getNewqTD(device->devAddr, epNum);
     if (idx < 0){
       EHCI_EnaInt();
       return -2;
     }
     mgr->setupIdx = idx;
-
-    idx = getNewqTD(devAddr, epNum);
+    
+    idx = getNewqTD(device->devAddr, epNum);
     if (idx < 0){
       EHCI_EnaInt();
       return -2;
     }
     mgr->dataIdx = idx;
-
+    
     QH->QH.DWORD1_EC0 |= EHCI_QH_EC0_DTC_qTD;
   } else {
     QH->QH.DWORD1_EC0 |= EHCI_QH_EC0_DTC_QH;
   }
-
-  QH->QH.DWORD1_EC0 |= (EHCI_QH_EC0_MPL(mps) | EHCI_QH_EC0_Endpt(epNum) | EHCI_QH_EC0_DA(devAddr));
-  if (psiv != DEV_SPEED_UNDEF){
-    speed = (uint32_t)(psiv) - 1;
+  
+  QH->QH.DWORD1_EC0 |= (EHCI_QH_EC0_MPL(mps) | EHCI_QH_EC0_Endpt(epNum) | EHCI_QH_EC0_DA(device->devAddr));
+  if (device->speed != DEV_SPEED_UNDEF){
+    speed = (uint32_t)(device->speed) - 1;
     QH->QH.DWORD1_EC0 |= (speed << 12);
-    if ((psiv < DEV_SPEED_HIGH) && (epNum == 0)){
+    if ((device->speed < DEV_SPEED_HIGH) && (epNum == 0)){
       QH->QH.DWORD1_EC0 |= EHCI_QH_EC0_C;
     }
   } else {
     EHCI_EnaInt();
     return -1;
   }
-  QH->QH.DWORD2_EC1 |= (EHCI_QH_EC1_Mult_1 | EHCI_QH_EC1_HA(hubAddr) | EHCI_QH_EC1_PN(hubPort));
+  QH->QH.DWORD2_EC1 |= (EHCI_QH_EC1_Mult_1 | EHCI_QH_EC1_HA(device->hubAddr) | EHCI_QH_EC1_PN(device->hubPort));
   QH->QH.DWORD3_CQLP = EHCI_QH_NQLP_T;
   QH->QH.DWORD4_NQLP = EHCI_QH_NQLP_T;
   QH->QH.DWORD5_ANQLP = EHCI_QH_NQLP_T;
@@ -387,7 +417,7 @@ int32_t OpenAsyncEndpoint(uint8_t devAddr, uint8_t epNum, uint32_t* bufHead, usb
   QH->QH.DWORD10_BP3 = 0;
   QH->QH.DWORD11_BP4 = 0;
   QH->completeCallback = func;
-
+  
   EHCI_EnaInt();
   return 0;
 }
@@ -398,7 +428,7 @@ int32_t CloseAsyncEndpoint(uint8_t devAddr, uint8_t epNum)
   ehci_QH_t* QH;
   ehci_qTD_t* qTD;
   hcd_Async_QH_Mgr_t* mgr;
-
+  
   EHCI_DisInt();
   
   idx = getMgr(devAddr, epNum, mgr);
@@ -406,22 +436,22 @@ int32_t CloseAsyncEndpoint(uint8_t devAddr, uint8_t epNum)
     EHCI_EnaInt();
     return -1;
   }
-
+  
   QH = &st_QH[idx].QH;
-
+  
   QH->DWORD4_NQLP = EHCI_QH_NQLP_T;
   QH->DWORD5_ANQLP = EHCI_QH_NQLP_T;
-
+  
   QH->DWORD1_EC0 = 0;
   QH->DWORD2_EC1 = 0;
-
+  
   
   if (mgr->mainTxIdx != 0xFF){
     st_qTDMgr[mgr->mainTxIdx].state = HCD_UNUSED;
     st_qTDMgr[mgr->mainTxIdx].epNum = 0xFF;
     st_qTDMgr[mgr->mainTxIdx].devAddr = 0xFF;
   }
-
+  
   if (epNum == 0){
     if (mgr->setupIdx != 0xFF){
       st_qTDMgr[mgr->setupIdx].state = HCD_UNUSED;
@@ -443,7 +473,7 @@ int32_t CloseAsyncEndpoint(uint8_t devAddr, uint8_t epNum)
   mgr->dataIdx = 0xFF;
   mgr->bufPointer = 0;
   mgr->iocPointer = 0;
-
+  
   EHCI_EnaInt();
   return 0;
 }
@@ -466,4 +496,14 @@ int32_t HcdAsync_SetAddress(uint8_t devAddr)
   msg.devAddr = devAddr;
   
   return enqueueMsg(&msg);  
+}
+
+int32_t HcdAsync_SetEp0Mps(uint8_t devAddr, uint16_t mps)
+{
+  hcd_Async_Msg_t msg;
+  msg.msgType = ASYNC_SET_EP0_MPS;
+  msg.ep0Mps = mps;
+  msg.devAddr = devAddr;
+  
+  return enqueueMsg(&msg);
 }

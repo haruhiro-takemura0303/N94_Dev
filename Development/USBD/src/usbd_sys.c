@@ -398,7 +398,7 @@ static void ep0InHandler(uint16_t size)
         }
         case(BREQ_SET_ADDRESS):{
           /*Status Stage Completed*/
-          device()->busState = ADDRESSED;
+          device()->busState = DEV_ADDRESSED;
           break;
         }
         case(BREQ_GET_DESCRIPTOR):{
@@ -415,7 +415,7 @@ static void ep0InHandler(uint16_t size)
         case(BREQ_SET_CONFIGURATION):{
           /*Status Stage Completed*/
           uint32_t epCtrl;
-          device()->busState = CONFIGURED;
+          device()->busState = DEV_CONFIGURED;
           for (int i = 1; i < USBD_MAX_EP_NUM; i++){
             epCtrl = device()->rxEp[i].epCtrl_RegVal | device()->txEp[i].epCtrl_RegVal;
             UDEV->ENDPTCTRL[i - 1] = epCtrl;
@@ -543,7 +543,7 @@ static void usbdIrqHandler(void)
       return;
     }
     
-    device()->busState = DEFAULT;
+    device()->busState = DEV_DEFAULT;
     
   } 
   if (usbSts & USBHS_USBSTS_SRI_MASK){

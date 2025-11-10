@@ -10,7 +10,7 @@
       <TargetName>TZ_Disabled</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>6230000::V6.23::ARMCLANG</pCCUsed>
+      <pCCUsed>6190000::V6.19::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities;.\NXP\frdmmcxn947_hello_world_cm33_core0\component;.\NXP\frdmmcxn947_hello_world_cm33_core0\board;.\NXP\frdmmcxn947_hello_world_cm33_core0\component\uart;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\debug_console_lite;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\str;..\Development\USBD\inc;..\Development\mikrobus\inc</IncludePath>
+              <IncludePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities;.\NXP\frdmmcxn947_hello_world_cm33_core0\component;.\NXP\frdmmcxn947_hello_world_cm33_core0\board;.\NXP\frdmmcxn947_hello_world_cm33_core0\component\uart;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\debug_console_lite;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\str;..\Development\USBD\inc;..\Development\mikrobus\inc;..\Development\usbh\inc;..\Development\usb_common</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -413,6 +413,36 @@
               <FileName>usbd_dual_vcom.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\USBD\src\usbd_dual_vcom.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>usb_common</GroupName>
+          <Files>
+            <File>
+              <FileName>usbphy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\usb_common\usbphy.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>usbh_ehci</GroupName>
+          <Files>
+            <File>
+              <FileName>ehci.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\usbh\src\ehci.c</FilePath>
+            </File>
+            <File>
+              <FileName>hcd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\usbh\src\hcd.c</FilePath>
+            </File>
+            <File>
+              <FileName>hcd_async.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\usbh\src\hcd_async.c</FilePath>
             </File>
           </Files>
         </Group>

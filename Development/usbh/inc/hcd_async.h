@@ -19,6 +19,7 @@ enum{
   ASYNC_USBINT = 1,
   ASYNC_TX_START = 2,
   ASYNC_SET_ADDRESS = 3,
+  ASYNC_SET_EP0_MPS,
 };
 
 enum{
@@ -49,6 +50,7 @@ typedef struct {
   uint8_t devAddr;
   uint8_t epNum;
   uint16_t txLen;
+  uint16_t ep0Mps;
 }hcd_Async_Msg_t;
 
 typedef struct{
@@ -58,11 +60,11 @@ typedef struct{
 }hcd_Async_MsgBox_t;
 
 void InitAsyncSchedule(void);
-int32_t OpenAsyncEndpoint(uint8_t devAddr, uint8_t epNum, uint32_t* bufHead, usb_psiv_t psiv, uint16_t mps, uint8_t hubAddr, uint8_t hubPort, void func(uint8_t, uint8_t, uint16_t));
+int32_t OpenAsyncEndpoint(hcd_DeviceInfo_t* device, uint8_t epNum, uint32_t* bufHead, uint16_t mps, void func(uint8_t, uint8_t, uint16_t));
 int32_t CloseAsyncEndpoint(uint8_t devAddr, uint8_t epNum);
 int32_t HcdAsync_StartTransfer(uint8_t devAddr, uint8_t epNum, uint16_t txLen);
 int32_t HcdAsync_SetAddress(uint8_t devAddr);
-
+int32_t HcdAsync_SetEp0Mps(uint8_t devAddr, uint16_t mps);
 
 
 #endif /*__HCD_ASYNC_H__*/

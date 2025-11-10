@@ -144,6 +144,7 @@ typedef struct{
 #define EHCI_QH_EC0_RL_Pos 28
 #define EHCI_QH_EC0_C (1UL << 27)
 #define EHCI_QH_EC0_MPL(x) (uint32_t)((uint32_t)(x) << 16)
+#define EHCI_QH_EC0_MPL_Msk	0x07FF0000
 #define EHCI_QH_EC0_H (1UL << 15)
 #define EHCI_QH_EC0_DTC_QH 0
 #define EHCI_QH_EC0_DTC_qTD (1UL << 14)

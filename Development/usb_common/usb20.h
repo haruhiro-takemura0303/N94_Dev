@@ -18,11 +18,11 @@ typedef enum{
 } usb_psiv_t;
 
 typedef enum{
-    DISCONNECTED = 0,
-    ATTACHED,
-    DEFAULT,
-    ADDRESSED,
-    CONFIGURED
+    DEV_DISCONNECTED = 0,
+    DEV_ATTACHED,
+    DEV_DEFAULT,
+    DEV_ADDRESSED,
+    DEV_CONFIGURED
 } usb_BusState_t;
 
 typedef union{
@@ -111,7 +111,7 @@ enum{
 	TYPE_INTERRUPT
 };
 
-enum usbEnumState{
+typedef enum {
 	DETACHED = 0,
 	ATTACHED,
 	GOT_DESCRIPTOR_DEV,
@@ -126,7 +126,7 @@ enum usbEnumState{
 	GET_DESCRIPTOR_STR_SKIPPED,
 	CONFIGURED,
 	NUM_OF_ENUM_STATE
-};
+}usb_EnumState_t;
 
 typedef union{
 	struct{

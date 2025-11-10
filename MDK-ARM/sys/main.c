@@ -10,6 +10,7 @@
 #include "pin_mux.h"
 
 #include "usbd_dual_vcom.h"
+#include "hcd.h"
 
 #include "mikrobus.h"
 
@@ -40,6 +41,9 @@ int main (void)
 
 	/*USB Device*/
 	InitDualVcom();
+	
+	/*USB Host(Enhanced Host Controller Interface)*/
+	InitEHCI();
 	
 	/*mikroBUS*/
 	InitMikroBUS();
