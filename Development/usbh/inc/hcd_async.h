@@ -22,11 +22,6 @@ enum{
   ASYNC_SET_EP0_MPS,
 };
 
-enum{
-  HCD_UNUSED,
-  HCD_USED
-};
-
 typedef struct{
   uint8_t state;
   uint8_t devAddr;

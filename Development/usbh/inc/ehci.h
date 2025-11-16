@@ -257,6 +257,11 @@ typedef enum{
   HCD_UNSUPPORTED_CLASS_AUDIO = -12,
 } hcd_Status_t;
 
+enum{
+  HCD_UNUSED,
+  HCD_USED
+};
+
 typedef struct{
   uint8_t state;
   uint8_t devAddr;
