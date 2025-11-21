@@ -43,11 +43,13 @@ typedef struct{
   uint8_t state;
   uint8_t devAddr;
   uint8_t epNum;
+  uint8_t bytePerSample;
   struct{
+    uint8_t esitCountMAX;
     uint8_t esitCount;
     uint8_t bytePerESIT_Even;
     uint8_t bytePerESIT_Odd;
-    uint8_t byteRemaining;
+    uint8_t byteRemainder;
   } outParam;
   struct{
     uint8_t bytePerESIT;
