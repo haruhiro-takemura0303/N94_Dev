@@ -9,6 +9,7 @@
 
 #include "ehci.h"
 #include "hcd_async.h"
+#include "hcd_periodic.h"
 
 #define HCD_MSGBOX_SIZE 32
 #define HCD_IRQn        CAN1_IRQn

@@ -16,6 +16,10 @@
 #define HCD_PERIODIC_iTD_SINGLE_BUF 4
 #define HCD_PERIODIC_PFL_SIZE 8
 
+#define HCD_PERIODIC_MSGBOX_SIZE 32
+
+#define HcdPeriodic_IRQn EWM0_IRQn
+
 typedef struct{
 	struct{
 		ehci_iTD_t iTD[HCD_PERIODIC_iTD_SINGLE_BUF];
@@ -64,5 +68,31 @@ typedef struct{
   uint32_t* bufPointer;
 }hcd_Periodic_QH_Mgr_t;
 
+typedef struct {
+  uint8_t msgType;
+  uint8_t devAddr;
+  uint8_t epNum;
+  uint16_t txLen;
+}hcd_Periodic_Msg_t;
+
+typedef struct{
+  hcd_Periodic_Msg_t msg[HCD_PERIODIC_MSGBOX_SIZE];
+  uint8_t enqPtr;
+  uint8_t deqPtr;
+}hcd_Periodic_MsgBox_t;
+
+enum{
+  PERIODIC_USBINT = 1,
+  PERIODIC_INTR_TX_START = 2,
+  PERIODIC_ISOCH_TX_START = 3,
+};
+
+void InitPeriodicSchedule(void);
+hcd_Status_t HcdPeriodic_StartIsochronousTransfer(uint8_t devAddr, uint8_t epNum);
+hcd_Status_t HcdPeriodic_StartInterruptTransfer(uint8_t devAddr, uint8_t epNum, uint16_t txLen);
+hcd_Status_t OpenIsochronousEndpoint(uint8_t devAddr, uint8_t epNum, uint16_t mps, usb_psiv_t speed, uint32_t samFreq, uint8_t bytePerSample, uint32_t* buf0, uint32_t* buf1, void func(uint8_t, uint8_t, uint16_t, uint32_t*, hcd_Periodic_IsochIn_ActTxInfo_t*));
+hcd_Status_t OpenInterruptEndpoint(hcd_DeviceInfo_t* device, uint8_t epNum, uint32_t* bufHead, uint16_t mps, void func(uint8_t, uint8_t, uint16_t));
+hcd_Status_t CloseIsochronousEndpoint(uint8_t devAddr, uint8_t epNum);
+hcd_Status_t CloseInterruptEndpoint(uint8_t devAddr, uint8_t epNum);
 
 #endif

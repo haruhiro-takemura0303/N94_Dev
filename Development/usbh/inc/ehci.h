@@ -168,6 +168,7 @@ typedef struct{
 #define EHCI_iTD_TSCx_Status_Active 0x80000000UL
 #define EHCI_iTD_TSCx_Status_Msk 0xF0000000UL
 #define EHCI_iTD_TSCx_TL(x) (uint32_t)((uint32_t)(x) << 16)
+#define iTD_TRANSFER_LENGTH_from_TSCx(x) (uint32_t)(((uint32_t)(x) & 0x0FFF0000) >> 16)
 #define EHCI_iTD_TSCx_IOC (1UL << 15)
 #define EHCI_iTD_TSCx_PG_0 0
 #define EHCI_iTD_TSCx_PG_1 (1UL << 12)

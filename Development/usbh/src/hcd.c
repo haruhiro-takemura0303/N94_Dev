@@ -365,7 +365,7 @@ static void hcdMainTask(void)
       }
       case(HCDMSG_PARSE_CONFIG):{
         devIdx = getDeviceIndex(msg.cont.parse_config.device->devAddr);
-        //parseStat = ParseConfigurationDescriptor(msg.cont.parse_config.device, &st_ConfigRawDesc[devIdx], &st_ConfigDescriptorContainer[devIdx]);
+        parseStat = ParseConfigurationDescriptor(msg.cont.parse_config.device, &st_ConfigRawDesc[devIdx], &st_ConfigDescriptorContainer[devIdx]);
         if (parseStat == 0){
           repMsg.type = HCDMSG_CTRL;
           repMsg.cont.ctrl.completeCb = NULL;
@@ -455,6 +455,7 @@ void InitEHCI(void)
   NVIC_SetPriority(HCD_IRQn, 4);
   NVIC_EnableIRQ(HCD_IRQn);
   InitAsyncSchedule();
+  InitPeriodicSchedule();
   
   EHCI_SysInit();
 }
