@@ -22,6 +22,8 @@
 #define MAX_EP_DCI      31
 #define MAX_DEVICE_NUM  3
 
+#define MAX_iTD_TSC			8
+
 typedef struct{
   void (*ehciUsbIntAsyncCb)(void);
 	void (*ehciUsbIntPeridicCb)(void);
@@ -82,14 +84,7 @@ typedef struct{
 
 typedef struct{
 	uint32_t DWORD0_NLP;
-	uint32_t DWORD1_TSC0;
-	uint32_t DWORD2_TSC1;
-	uint32_t DWORD3_TSC2;
-	uint32_t DWORD4_TSC3;
-	uint32_t DWORD5_TSC4;
-	uint32_t DWORD6_TSC5;
-	uint32_t DWORD7_TSC6;
-	uint32_t DWORD8_TSC7;
+	uint32_t TSCx[MAX_iTD_TSC];
 	uint32_t DWORD9_BP0;
 	uint32_t DWORD10_BP1;
 	uint32_t DWORD11_BP2;

@@ -19,9 +19,6 @@
 typedef struct{
 	struct{
 		ehci_iTD_t iTD[HCD_PERIODIC_iTD_SINGLE_BUF];
-		struct{
-			uint32_t dWord[8];
-		} iTDmirror[HCD_PERIODIC_iTD_SINGLE_BUF];
 	} doubleBuf[2];
 } hcd_Periodic_iTD_buf_t;
 
@@ -49,7 +46,7 @@ typedef struct{
     uint8_t esitCount;
     uint8_t bytePerESIT_Even;
     uint8_t bytePerESIT_Odd;
-    uint8_t byteRemainder;
+    uint8_t sampleRemainder;
   } outParam;
   struct{
     uint8_t bytePerESIT;
