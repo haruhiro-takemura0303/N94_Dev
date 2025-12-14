@@ -466,3 +466,8 @@ void MakeSETUPPacket(uint8_t dir, uint8_t typ, uint8_t attr, uint8_t bRequest, u
   setup[0] = ((uint32_t)wValue << 16 | (uint32_t)bRequest << 8 | bmRequestType);
   setup[1] = ((uint32_t)wLength << 16 | (uint32_t)wIndex);
 }
+
+int32_t SendMessageToHostControllerDriver(hcd_Msg_t* msg)
+{
+  return enqueueMsg(&st_MsgBox, msg);
+}

@@ -7,7 +7,7 @@
 #include "hcd_class.h"
 
 static hcd_ClassMgr_t st_ClassMgr[MAX_DEVICE_NUM];
-static hcd_ClassMap_t st_ClassMap[MAX_DEFINED_CLASS_CODE + 1];
+static hcd_ClassDriver_t st_ClassDriver[MAX_DEFINED_CLASS_CODE + 1];
 
 static int32_t clsNew(uint8_t clsIdx, uint8_t clsCode)
 {
@@ -67,8 +67,8 @@ hcd_Status_t ParseConfigurationDescriptor(hcd_DeviceInfo_t* device, config_rawde
           st_ClassMgr[clsIdx].clsCode[clsCount] = curCls;
           clsCount++;
         }
-        if (st_ClassMap[curCls].parseInterface){
-          retReadPtr = st_ClassMap[curCls].parseInterface(confRaw, device);
+        if (st_ClassDriver[curCls].parseInterface){
+          retReadPtr = st_ClassDriver[curCls].parseInterface(confRaw, device);
           if (retReadPtr){
             confRaw->readPtr += retReadPtr;
           } else {
@@ -87,8 +87,8 @@ hcd_Status_t ParseConfigurationDescriptor(hcd_DeviceInfo_t* device, config_rawde
           st_ClassMgr[clsIdx].clsCode[clsCount] = curCls;
           clsCount++;
         }
-        if (st_ClassMap[curCls].parseIAD){
-          retReadPtr = st_ClassMap[curCls].parseIAD(confRaw, device);
+        if (st_ClassDriver[curCls].parseIAD){
+          retReadPtr = st_ClassDriver[curCls].parseIAD(confRaw, device);
           if (retReadPtr){
             confRaw->readPtr += retReadPtr;
           } else {
@@ -122,23 +122,23 @@ hcd_Status_t InitClassDriver(hcd_DeviceInfo_t* device)
     return HCD_INVALID_PARAM;
   }
   for (int i = 0; i < 3; i++){
-    if (st_ClassMap[mgr->clsCode[i]].initClass){
-      st_ClassMap[i].initClass(device);
+    if (st_ClassDriver[mgr->clsCode[i]].initClass){
+      st_ClassDriver[i].initClass(device);
     }
   }
 
   return HCD_OK;
 }
 
-hcd_Status_t RegisterClassDriver(hcd_ClassMap_t* map, uint8_t clsCode)
+hcd_Status_t RegisterClassDriver(hcd_ClassDriver_t* map, uint8_t clsCode)
 {
   if (clsCode > MAX_DEFINED_CLASS_CODE){
     return HCD_UNSUPPORTED_CLASS;
   }
-  st_ClassMap[clsCode].parseInterface = map->parseInterface;
-  st_ClassMap[clsCode].parseIAD = map->parseIAD;
-  st_ClassMap[clsCode].initClass =  map->initClass;
-  st_ClassMap[clsCode].terinateClass = map->terinateClass;
+  st_ClassDriver[clsCode].parseInterface = map->parseInterface;
+  st_ClassDriver[clsCode].parseIAD = map->parseIAD;
+  st_ClassDriver[clsCode].initClass =  map->initClass;
+  st_ClassDriver[clsCode].terinateClass = map->terinateClass;
 
   return HCD_OK;
 }
