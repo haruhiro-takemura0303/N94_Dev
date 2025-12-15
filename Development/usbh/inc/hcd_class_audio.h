@@ -56,7 +56,7 @@ typedef enum {
 
 enum{
   HCD_AUDIO_CTRL_REQ = 1,
-  HCD_AUDIO_CTRL_REQ_COMP,
+  HCD_AUDIO_CTRL_REQ_DONE,
   HCD_INTERRUPT_COMPLETE,
   HCD_AUDIO_INITIAL_REQ,
   HCD_AUDIO_INITIAL_REQ_DONE,
@@ -72,10 +72,15 @@ typedef struct {
   uint8_t epNum;
   uint8_t intfNum;
   uint32_t* bufPtr;
-  uint32_t fs;
-  uint16_t mps;
-  uint8_t bitReso;
-  uint8_t numOfChannels;
+  union{
+    struct{
+      uint32_t fs;
+      uint16_t mps;
+      uint8_t bitReso;
+      uint8_t numOfChannels;
+    }audio;
+    usb_SetupPacket_t setup;
+  }other;
 }hcd_Audio_Msg_t;
 
 typedef struct{
@@ -87,7 +92,7 @@ typedef struct{
 typedef struct{
   uint8_t init;
   uint8_t num;
-  uint8_t attr;
+  uint8_t intfNum;
   uint8_t interval;
   uint8_t numOfChannels;
   uint8_t bitReso;
@@ -111,7 +116,6 @@ typedef struct{
     hcd_Audio_Endpoint_Info_t isochIn; 
   }ep;
   uint32_t *interruptBuf;
-  uint32_t *reqBuf;
   uint32_t *isochOutBuf[2];
   void (*isochOutCallback)(uint32_t* buf, uint16_t nextTxSize);
   void (*isochInCallback)(uint32_t* buf, uint16_t currentTxSize);
@@ -120,11 +124,12 @@ typedef struct{
 }hcd_Audio_Transfer_Driver_t;
 
 typedef struct{
-  uint16_t (*parseControlInterface)(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_Info_t* intf, hcd_DeviceInfo_t* device);
-  uint16_t (*parseStreamingInterface)(config_rawdesc_t *confRaw, uint8_t* isochOutEp, uint8_t* isochInEp, hcd_DeviceInfo_t* device);
-  void (*sendInitialRequest)(uint32_t* reqBuf, hcd_DeviceInfo_t* device);
+  uint16_t (*parseControlInterface)(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_Info_t* intr, hcd_DeviceInfo_t* device);
+  uint16_t (*parseStreamingInterface)(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_Info_t* isochOutEp, hcd_Audio_Endpoint_Info_t* isochInEp, hcd_DeviceInfo_t* device);
+  void (*sendInitialRequest)(hcd_DeviceInfo_t* device);
   hcd_Status_t (*setSamplingRate)(uint32_t fs, uint8_t bitReso, uint8_t ifNum, hcd_DeviceInfo_t* device);
-  void (*requestDone)(hcd_DeviceInfo_t* device);
+  void (*requestDoneFromISR)(hcd_DeviceInfo_t* device, uint32_t* ep0Buf);
+  void (*requestDone)(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1);
 }hcd_Audio_Protocol_Driver_t;
 
 void InitAudioClass(void);

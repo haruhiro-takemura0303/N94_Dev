@@ -87,6 +87,10 @@ typedef struct{
   uint8_t deqPtr;
 }hcd_MsgBox_t;
 
+static inline uint16_t U16FromU8x2(uint8_t msb, uint8_t lsb){
+  return (((uint16_t)msb << 8) | lsb);
+}
+
 void InitEHCI(void);
 void MakeSETUPPacket(uint8_t dir, uint8_t typ, uint8_t attr, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, uint32_t* setup);
 int32_t SendMessageToHostControllerDriver(hcd_Msg_t* msg);

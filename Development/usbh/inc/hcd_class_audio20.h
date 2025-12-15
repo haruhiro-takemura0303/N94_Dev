@@ -15,173 +15,193 @@
 
 #define HCD_UAC20_MAX_ENTITY_ID   32
 #define HCD_UAC20_MAX_ALTSET      8
+#define HCD_UAC20_SOURCE_ROOT   0xFE
+#define HCD_UAC20_SOURCE_MULTI  0xFF
+#define HCD_UAC20_CLOCK_NOT_CONNECTED 0xFD
 
 enum{
-	TERMINAL_TYPE_USB = 0x0101,
-	TERMINAL_TYPE_MIC = 0x0201,
-	TERMINAL_TYPE_SPK = 0x0301,
+  TERMINAL_TYPE_USB = 0x0101,
+  TERMINAL_TYPE_MIC = 0x0201,
+  TERMINAL_TYPE_SPK = 0x0301,
 };
 
+typedef enum {
+  CATEGORY_UNDEFINED             = 0x00,
+  CATEGORY_DESKTOP_SPEAKER       = 0x01,
+  CATEGORY_HOME_THEATER          = 0x02,
+  CATEGORY_MICROPHONE            = 0x03,
+  CATEGORY_HEADSET               = 0x04,
+  CATEGORY_TELEPHONE             = 0x05,
+  CATEGORY_CONVERTER             = 0x06,
+  CATEGORY_VOICE_SOUND_RECORDER  = 0x07,
+  CATEGORY_IO_BOX                = 0x08,
+  CATEGORY_MUSICAL_INSTRUMENT    = 0x09,
+  CATEGORY_PRO_AUDIO             = 0x0A,
+  CATEGORY_AUDIO_VIDEO           = 0x0B,
+  CATEGORY_CONTROL_PANEL         = 0x0C
+  /* 0x0D to 0xFF are Reserved */
+} UAC20_Cayegory_t;
+
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bcdADC_lsB;
-	uint8_t bcdADC_msB;
-	uint8_t bCategory;
-	uint8_t wTotalLength_lsB;
-	uint8_t wTotalLength_msB;
-	uint8_t bmControls;
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bcdADC_lsB;
+  uint8_t bcdADC_msB;
+  uint8_t bCategory;
+  uint8_t wTotalLength_lsB;
+  uint8_t wTotalLength_msB;
+  uint8_t bmControls;
 } csUsbDesc_AudioCtrlIfHdr2_t; // Audio Control Interface Header (ADC2.0) Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bClockID;
-	uint8_t bmAttributes;
-	uint8_t bmControls;
-	uint8_t bAssocTerminal;
-	uint8_t iClockSource;
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bClockID;
+  uint8_t bmAttributes;
+  uint8_t bmControls;
+  uint8_t bAssocTerminal;
+  uint8_t iClockSource;
 } csUsbDesc_AudioCtrlIfClkSrc_t; // Audio Control Interface Clock Source Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bClockID;
-	uint8_t bNrInPins;
-	uint8_t baCSourceID;
-	//bmControls, iClockSelector
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bClockID;
+  uint8_t bNrInPins;
+  uint8_t baCSourceID;
+  //bmControls, iClockSelector
 } csUsbDesc_AudioCtrlIfClkSel_t; // Audio Control Interface Clock Selector Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bClockID;
-	uint8_t bCSourceID;
-	uint8_t bmControls;
-	uint8_t iClockMultplier;
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bClockID;
+  uint8_t bCSourceID;
+  uint8_t bmControls;
+  uint8_t iClockMultplier;
 } csUsbDesc_AudioCtrlIfClkMult_t; // Audio Control Interface Clock Multiplier Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bTerminalID;
-	uint8_t wTerminalType_lsB;
-	uint8_t wTerminalType_msB;
-	uint8_t bAssocTerminal;
-	uint8_t bCSourceID;
-	uint8_t bNrChannels;
-	uint8_t bmChannelConfig_0thB;
-	uint8_t bmChannelConfig_1stB;
-	uint8_t bmChannelConfig_2ndB;
-	uint8_t bmChannelConfig_3rdB;
-	uint8_t iChannelNames;
-	uint8_t bmControls_lsB;
-	uint8_t bmControls_msB;
-	uint8_t iTerminal;
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bTerminalID;
+  uint8_t wTerminalType_lsB;
+  uint8_t wTerminalType_msB;
+  uint8_t bAssocTerminal;
+  uint8_t bCSourceID;
+  uint8_t bNrChannels;
+  uint8_t bmChannelConfig_0thB;
+  uint8_t bmChannelConfig_1stB;
+  uint8_t bmChannelConfig_2ndB;
+  uint8_t bmChannelConfig_3rdB;
+  uint8_t iChannelNames;
+  uint8_t bmControls_lsB;
+  uint8_t bmControls_msB;
+  uint8_t iTerminal;
 } csUsbDesc_AudioCtrlInputTerm2_t;  // Audio Control Input Terminal (ADC2.0) Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bTerminalID;
-	uint8_t wTerminalType_lsB;
-	uint8_t wTerminalType_msB;
-	uint8_t bAssocTerminal;
-	uint8_t bSourceID;
-	uint8_t bCSourceID;
-	uint8_t bmControls_lsB;
-	uint8_t bmControls_msB;
-	uint8_t iTerminal;
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bTerminalID;
+  uint8_t wTerminalType_lsB;
+  uint8_t wTerminalType_msB;
+  uint8_t bAssocTerminal;
+  uint8_t bSourceID;
+  uint8_t bCSourceID;
+  uint8_t bmControls_lsB;
+  uint8_t bmControls_msB;
+  uint8_t iTerminal;
 } csUsbDesc_AudioCtrlOutputTerm2_t;  // Audio Control Output Terminal (ADC2.0) Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bUnitID;
-	uint8_t bNrInPins;
-	uint8_t baSourceID;
-	/*After baSourceID -> bNrChannels, bmChannelConfig, iChannelNames, bmMixerControls, bmControl, iMixer*/
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bUnitID;
+  uint8_t bNrInPins;
+  uint8_t baSourceID;
+  /*After baSourceID -> bNrChannels, bmChannelConfig, iChannelNames, bmMixerControls, bmControl, iMixer*/
 }csUsbDesc_AudioCtrlMixUnit2_t;		//Audio Control Mixer Unit (ADC2.0) Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bUnitID;
-	uint8_t bSourceID;
-	uint8_t bmaControls_0thB;
-	uint8_t bmaControls_1stB;
-	uint8_t bmaControls_2ndB;
-	uint8_t bmaControls_3rdB;
-	/*After bmaControls -> iFeature*/
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bUnitID;
+  uint8_t bSourceID;
+  uint8_t bmaControls_0thB;
+  uint8_t bmaControls_1stB;
+  uint8_t bmaControls_2ndB;
+  uint8_t bmaControls_3rdB;
+  /*After bmaControls -> iFeature*/
 }csUsbDesc_AudioCtrlFeatUnit2_t; //Audio Control Feature Unit Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bUnitID;
-	uint8_t bNrInPins;
-	uint8_t baSourceID;
-	/*After baSourceID -> bmControls, iSelector*/
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bUnitID;
+  uint8_t bNrInPins;
+  uint8_t baSourceID;
+  /*After baSourceID -> bmControls, iSelector*/
 }csUsbDesc_AudioCtrlSelUnit2_t;  // Audio Control Selector Unit Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bUnitID;
-	uint8_t wExtensionCode_lsB;
-	uint8_t wExtensionCode_msB;
-	uint8_t bNrInPins;
-	uint8_t baSourceID;
-	/*After baSourceID -> bNrChannels, bmChannelConfig, iChannelNames, bmControls, iExtension*/
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bUnitID;
+  uint8_t wExtensionCode_lsB;
+  uint8_t wExtensionCode_msB;
+  uint8_t bNrInPins;
+  uint8_t baSourceID;
+  /*After baSourceID -> bNrChannels, bmChannelConfig, iChannelNames, bmControls, iExtension*/
 }csUsbDesc_AudioCtrlExtUnit_t;  // Audio Control Selector Unit Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bTerminalLink;
-	uint8_t bmControls;
-	uint8_t bFormatType;
-	uint8_t bmFormats_0thB;
-	uint8_t bmFormats_1stB;
-	uint8_t bmFormats_2ndB;
-	uint8_t bmFormats_3rdB;
-	uint8_t bNrChannels;
-	uint8_t bmChannelConfig_0thB;
-	uint8_t bmChannelConfig_1stB;
-	uint8_t bmChannelConfig_2ndB;
-	uint8_t bmChannelConfig_3rdB;
-	uint8_t iChannelNames;
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bTerminalLink;
+  uint8_t bmControls;
+  uint8_t bFormatType;
+  uint8_t bmFormats_0thB;
+  uint8_t bmFormats_1stB;
+  uint8_t bmFormats_2ndB;
+  uint8_t bmFormats_3rdB;
+  uint8_t bNrChannels;
+  uint8_t bmChannelConfig_0thB;
+  uint8_t bmChannelConfig_1stB;
+  uint8_t bmChannelConfig_2ndB;
+  uint8_t bmChannelConfig_3rdB;
+  uint8_t iChannelNames;
 } csUsbDesc_AudioStrmIf2_t;  // Audio Streaming Class Specific Interface (ADC2.0) Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bFormatType;
-	uint8_t bSubslotSize;
-	uint8_t bBitResolution;
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bFormatType;
+  uint8_t bSubslotSize;
+  uint8_t bBitResolution;
 } csUsbDesc_AudioStrmFmtTypI2_t;		// Audio Streaming Format Type I (ADC2.0) Desc.
 
 typedef struct{
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
-	uint8_t bmAttributes;
-	uint8_t bmControls;
-	uint8_t bLockDelayUnit;
-	uint8_t wLockDelay_lsB;
-	uint8_t wLockDelay_msB;
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubtype;
+  uint8_t bmAttributes;
+  uint8_t bmControls;
+  uint8_t bLockDelayUnit;
+  uint8_t wLockDelay_lsB;
+  uint8_t wLockDelay_msB;
 } csUsbDesc_AudioStrmDataEndpt2_t;		// Audio Streaming Class Specific Audio Data Endpoint (ADC2.0) Desc.
 
 typedef struct{
@@ -214,6 +234,7 @@ typedef struct{
 
 typedef struct{
   hcd_DeviceInfo_t* device;
+  UAC20_Cayegory_t category;
   struct{
     usbDesc_Interface_t* intfPtr;
     usbDesc_Endpoint2_t* epPtr;
