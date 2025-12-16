@@ -126,7 +126,7 @@ typedef struct{
 typedef struct{
   uint16_t (*parseControlInterface)(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_Info_t* intr, hcd_DeviceInfo_t* device);
   uint16_t (*parseStreamingInterface)(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_Info_t* isochOutEp, hcd_Audio_Endpoint_Info_t* isochInEp, hcd_DeviceInfo_t* device);
-  void (*sendInitialRequest)(hcd_DeviceInfo_t* device);
+  hcd_Status_t (*sendInitialRequest)(hcd_DeviceInfo_t* device);
   hcd_Status_t (*setSamplingRate)(uint32_t fs, uint8_t bitReso, uint8_t ifNum, hcd_DeviceInfo_t* device);
   void (*requestDoneFromISR)(hcd_DeviceInfo_t* device, uint32_t* ep0Buf);
   void (*requestDone)(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1);

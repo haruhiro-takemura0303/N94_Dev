@@ -9,15 +9,16 @@
 
 #include "hcd_class_audio.h"
 
-#define HCD_UAC20_MAX_CLK_SRC_SUBRANGE 8
+#define HCD_UAC20_MAX_CLK_SRC_SUBRANGE 4
 #define HCD_UAC20_MAX_CLK_SRC       4
 #define HCD_UAC20_MAX_VOL_SUBRANGE 16
 
 #define HCD_UAC20_MAX_ENTITY_ID   32
-#define HCD_UAC20_MAX_ALTSET      8
+#define HCD_UAC20_MAX_ALTSET      4
 #define HCD_UAC20_SOURCE_ROOT   0xFE
 #define HCD_UAC20_SOURCE_MULTI  0xFF
 #define HCD_UAC20_CLOCK_NOT_CONNECTED 0xFD
+#define HCD_UAC20_CLOCK_ENTITY  0xFC
 
 enum{
   TERMINAL_TYPE_USB = 0x0101,
@@ -239,14 +240,15 @@ typedef struct{
     usbDesc_Interface_t* intfPtr;
     usbDesc_Endpoint2_t* epPtr;
     hcd_UAC20_EntityMap_t entity[HCD_UAC20_MAX_ENTITY_ID];
-    hcd_UAC20_ClockSrcInfo_t clockSrc[HCD_UAC20_MAX_CLK_SRC];
+    struct{
+      uint8_t numOfClockSrc;
+      hcd_UAC20_ClockSrcInfo_t clockSrc[HCD_UAC20_MAX_CLK_SRC];
+    } clock;
   } control;
   struct{
-    uint8_t numOfAltSet;
     hcd_UAC20_AltSet_t altSet[HCD_UAC20_MAX_ALTSET];
   } streamOut;
   struct{
-    uint8_t numOfAltSet;
     hcd_UAC20_AltSet_t altSet[HCD_UAC20_MAX_ALTSET];
   } streamIn;
 } hcd_UAC20_Info_t;

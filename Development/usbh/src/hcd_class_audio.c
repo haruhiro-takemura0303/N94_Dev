@@ -246,7 +246,10 @@ static void audioClassTask(void)
         break;
       }
       case(HCD_AUDIO_INITIAL_REQ):{
-        protocol->sendInitialRequest(driver->device);
+        status = protocol->sendInitialRequest(driver->device);
+        if (status != HCD_OK){
+          /*error*/
+        }
         break;
       }
       case(HCD_AUDIO_INITIAL_REQ_DONE):{
