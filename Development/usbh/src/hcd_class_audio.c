@@ -231,10 +231,10 @@ static void audioClassTask(void)
     switch(msg.msgType){
       case(HCD_AUDIO_CTRL_REQ):{
         hcdMsg.type = HCDMSG_CTRL;
-        hcdMsg.cont.ctrl.setup.DWORD[0] = msg.bufPtr[0];
-        hcdMsg.cont.ctrl.setup.DWORD[1] = msg.bufPtr[1];
+        hcdMsg.cont.ctrl.setup.DWORD[0] = msg.other.setup.DWORD[0];
+        hcdMsg.cont.ctrl.setup.DWORD[1] = msg.other.setup.DWORD[1];
         if ((hcdMsg.cont.ctrl.setup.BIT.bmRequestType.dir == BMREQ_DIR_OUT) && hcdMsg.cont.ctrl.setup.BIT.wLength){
-          hcdMsg.cont.ctrl.sendDataBuf = &msg.bufPtr[2];
+          hcdMsg.cont.ctrl.sendDataBuf = msg.bufPtr;
         }
         hcdMsg.cont.ctrl.device = driver->device;
         hcdMsg.cont.ctrl.completeCb = requestComplete;

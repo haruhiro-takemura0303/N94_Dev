@@ -20,6 +20,29 @@
 #define HCD_UAC20_CLOCK_NOT_CONNECTED 0xFD
 #define HCD_UAC20_CLOCK_ENTITY  0xFC
 
+#define HCD_UAC20_IN_REQUEST_DATA_SIZE  128
+#define HCD_UAC20_OUT_REQUEST_DATA_SIZE  8
+
+#define HCD_UAC20_MAX_OUT_REQUEST_NUM   16
+#define HCD_UAC20_MAX_IN_REQUEST_NUM    4
+#define HCD_UAC20_MAX_PENDED_SETUP      32
+
+typedef struct{
+  usb_SetupPacket_t pendedSetup[HCD_UAC20_MAX_PENDED_SETUP];
+  uint8_t enqPtr;
+  uint8_t deqPtr;
+} hcd_UAC20_PendRequest_Box_t;
+
+typedef struct{
+  usb_SetupPacket_t setup;
+  uint32_t dataBuf[HCD_UAC20_IN_REQUEST_DATA_SIZE / 4];
+} hcd_UAC20_RequestIn_Buf_t;
+
+typedef struct{
+  usb_SetupPacket_t setup;
+  uint32_t dataBuf[HCD_UAC20_OUT_REQUEST_DATA_SIZE / 4];  
+} hcd_UAC20_RequestOut_Buf_t;
+
 enum{
   TERMINAL_TYPE_USB = 0x0101,
   TERMINAL_TYPE_MIC = 0x0201,
@@ -42,6 +65,24 @@ typedef enum {
   CATEGORY_CONTROL_PANEL         = 0x0C
   /* 0x0D to 0xFF are Reserved */
 } UAC20_Cayegory_t;
+
+typedef enum{
+  BREQ_CUR = 1,
+  BREQ_RANGE,
+  BREQ_MEM
+} UAC20_bRequest_t;
+
+typedef enum{
+  CS_SAMFREQ_CONTROL = 1,
+  CS_CLOCK_VALID_CONTROL,
+} UAC20_SamFreqCtrl_t;
+
+typedef enum{
+  CX_CLOCK_SELECTOR_CONTROL = 1,
+} UAC20_ClkSelCtrl_t;
+
+#define UAC_WVALUE_CONTROL_SEL(x)     (x << 8)
+#define UAC_WINDEX_ENTITY(x)          (x << 8)
 
 typedef struct{
   uint8_t bLength;
@@ -246,9 +287,11 @@ typedef struct{
     } clock;
   } control;
   struct{
+    hcd_UAC20_AltSet_t* curAltSet;
     hcd_UAC20_AltSet_t altSet[HCD_UAC20_MAX_ALTSET];
   } streamOut;
   struct{
+    hcd_UAC20_AltSet_t* curAltSet;
     hcd_UAC20_AltSet_t altSet[HCD_UAC20_MAX_ALTSET];
   } streamIn;
 } hcd_UAC20_Info_t;

@@ -10,6 +10,41 @@
 static uint8_t st_NumOfDevice;
 static hcd_UAC20_Info_t st_Info[NUM_OF_MAX_AUDIO_DEVICE];
 
+static hcd_UAC20_RequestOut_Buf_t st_ReqOutBuf[HCD_UAC20_MAX_OUT_REQUEST_NUM];
+static hcd_UAC20_RequestIn_Buf_t st_ReqInBuf[HCD_UAC20_MAX_IN_REQUEST_NUM];
+static hcd_UAC20_PendRequest_Box_t st_PendBox;
+
+static hcd_Status_t enqueue(usb_SetupPacket_t* setup)
+{
+  hcd_Status_t ret;
+  if (st_PendBox.deqPtr - st_PendBox.enqPtr != 1){
+    memcpy(&st_PendBox.pendedSetup[st_PendBox.enqPtr], setup, sizeof(usb_SetupPacket_t));
+    st_PendBox.enqPtr++;
+    if (st_PendBox.enqPtr == HCD_PERIODIC_MSGBOX_SIZE){
+      st_PendBox.enqPtr = 0;
+    }
+    ret = HCD_OK;
+  } else {
+    ret = HCD_FULL;
+  }
+  return ret;
+}
+
+static hcd_Status_t dequeue(usb_SetupPacket_t* setup)
+{
+  hcd_Status_t ret;
+  if (st_PendBox.deqPtr != st_PendBox.enqPtr){
+    memcpy(setup, &st_PendBox.pendedSetup[st_PendBox.deqPtr], sizeof(usb_SetupPacket_t));
+    st_PendBox.deqPtr++;
+    if (st_PendBox.deqPtr == HCD_PERIODIC_MSGBOX_SIZE){
+      st_PendBox.deqPtr = 0;
+    }
+    ret = HCD_OK;
+  } else {
+    ret = HCD_FULL;
+  }
+  return ret;
+}
 
 static hcd_UAC20_Info_t* getInfo(hcd_DeviceInfo_t* device)
 {
@@ -237,7 +272,7 @@ uint16_t parseStreamingInterface(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_I
       curAlt = &info->streamOut.altSet[curAltNum];
     }
   }
-
+  
   curAlt->intfPtr = intfPtr;
   
   rdIdx += intfPtr->bLength;
@@ -274,7 +309,7 @@ uint16_t parseStreamingInterface(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_I
         break;
       }
       default:
-        break;
+      break;
     }
     uint8_t bLen = confRaw->rawDesc[rdIdx];
     rdIdx += bLen;
@@ -285,15 +320,189 @@ uint16_t parseStreamingInterface(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_I
   return descInc;
 }
 
+hcd_Status_t createRequest(usb_SetupPacket_t* setup, uint32_t data0, uint32_t data1)
+{
+  int i = 0;
+  hcd_Audio_Msg_t msg;
+  if (setup->BIT.bmRequestType.dir == BMREQ_DIR_IN){
+    for (i = 0; i < HCD_UAC20_MAX_IN_REQUEST_NUM; i++){
+      if ((st_ReqInBuf[i].setup.DWORD[0] == 0) && (st_ReqInBuf[i].setup.DWORD[1] == 0)){
+        st_ReqInBuf[i].setup.DWORD[0] = setup->DWORD[0];
+        st_ReqInBuf[i].setup.DWORD[1] = setup->DWORD[1];
+        msg.other.setup.DWORD[0] = setup->DWORD[0];
+        msg.other.setup.DWORD[1] = setup->DWORD[1];
+        HcdAudio_SendMsg(&msg);
+        break;
+      }
+    }
+    if (i == HCD_UAC20_MAX_IN_REQUEST_NUM){
+      return enqueue(setup);
+    }
+  } else {
+    for (i = 0; i < HCD_UAC20_MAX_OUT_REQUEST_NUM; i++){
+      if ((st_ReqOutBuf[i].setup.DWORD[0] == 0) && (st_ReqOutBuf[i].setup.DWORD[1] == 0)){
+        st_ReqOutBuf[i].setup.DWORD[0] = setup->DWORD[0];
+        st_ReqOutBuf[i].setup.DWORD[1] = setup->DWORD[1];
+        msg.other.setup.DWORD[0] = setup->DWORD[0];
+        msg.other.setup.DWORD[1] = setup->DWORD[1];
+        if (setup->BIT.wLength > 0){
+          st_ReqOutBuf[i].dataBuf[0] = data0;
+          st_ReqOutBuf[i].dataBuf[1] = data1;
+          msg.bufPtr = &st_ReqOutBuf[i].dataBuf[0];
+        }
+        HcdAudio_SendMsg(&msg);
+        break;
+      }
+    }
+    if (i == HCD_UAC20_MAX_OUT_REQUEST_NUM){
+      return HCD_FULL;
+    }        
+  }
+  return HCD_OK;
+}
+
 hcd_Status_t sendInitialRequest(hcd_DeviceInfo_t* device)
 {
   hcd_UAC20_Info_t* info;
+  usb_SetupPacket_t setup;
+  uint8_t clockID, intfNum;
+  hcd_Status_t ret;
   
   info = getInfo(device);
   if (!info){
     return HCD_NULL;
   }
+  
+  intfNum = info->control.intfPtr->bInterfaceNumber;
+  
+  for (int i = 0; i < info->control.clock.numOfClockSrc; i++){
+    clockID = info->control.clock.clockSrc[i].clockID;
+    MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_RANGE, UAC_WVALUE_CONTROL_SEL(CS_SAMFREQ_CONTROL), UAC_WINDEX_ENTITY(clockID) | intfNum, HCD_UAC20_IN_REQUEST_DATA_SIZE, &setup);
+    ret = createRequest(&setup, 0, 0);
+    if (ret){
+      break;
+    }
+  }
+  
+  return ret;
+}
 
+void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1)
+{
+  hcd_UAC20_Info_t* info;
+  usb_SetupPacket_t setup;
+  uint8_t entityID, entityType, ctrlSel, intfNum;
+  uint32_t* dataBuf;
+  
+  info = getInfo(device);
+  if (!info){
+    return;
+  }
+  
+  setup.DWORD[0] = setup0;
+  setup.DWORD[1] = setup1;
+  
+  if (setup.BIT.bmRequestType.dir == BMREQ_DIR_IN){
+    for (int i = 0; i < HCD_UAC20_MAX_IN_REQUEST_NUM; i++){
+      if ((setup0 == st_ReqInBuf[i].setup.DWORD[0]) && (setup1 == st_ReqInBuf[i].setup.DWORD[1])){
+        st_ReqInBuf[i].setup.DWORD[0] = 0;
+        st_ReqInBuf[i].setup.DWORD[1] = 0;
+        dataBuf = &st_ReqInBuf[i].dataBuf[0];
+        break;
+      }
+    }
+  } else {
+    for (int i = 0; i < HCD_UAC20_MAX_OUT_REQUEST_NUM; i++){
+      if ((setup0 == st_ReqOutBuf[i].setup.DWORD[0]) && (setup1 == st_ReqOutBuf[i].setup.DWORD[1])){
+        st_ReqOutBuf[i].setup.DWORD[0] = 0;
+        st_ReqOutBuf[i].setup.DWORD[1] = 0;
+        dataBuf = &st_ReqOutBuf[i].dataBuf[0];
+        break;
+      }
+    }    
+  }
+  
+  switch(setup.BIT.bmRequestType.type){
+    case(BMREQ_TYPE_STANDARD):{
+      break;
+    }
+    case(BMREQ_TYPE_CLASS):{
 
+      switch(setup.BIT.bmRequestType.attr){
+        case(BMREQ_ATTR_INTERFACE):{
+          intfNum = setup.BIT.wIndex & 0xFF;
+          if (intfNum == info->control.intfPtr->bInterfaceNumber){
+            /*Audio Control Request*/
+            entityID = setup.BIT.wIndex >> 8;
+            entityType = info->control.entity[entityID].type;
 
+            switch(entityType){
+              case(CLOCK_SOURCE):{
+                ctrlSel = setup.BIT.wValue >> 8;
+                
+                switch(ctrlSel){
+                  case(CS_SAMFREQ_CONTROL):{
+
+                    switch(setup.BIT.bRequest){
+                      case(BREQ_CUR):{
+                        break;
+                      }
+                      case(BREQ_RANGE):{
+                        hcd_UAC20_ClockSrcInfo_t* clk;
+                        uint16_t numSubRange;
+                        uint16_t* buf_u16;
+                        if (setup.BIT.bmRequestType.dir == BMREQ_DIR_IN){
+                          numSubRange = dataBuf[0] & 0xFFFF;
+                          for (int j = 0; j < info->control.clock.numOfClockSrc; j++){
+                            if (entityID == info->control.clock.clockSrc[j].clockID){
+                              clk = &info->control.clock.clockSrc[j];
+                              break;
+                            }
+                          }
+
+                          if (numSubRange > HCD_UAC20_MAX_CLK_SRC_SUBRANGE){
+                            numSubRange = HCD_UAC20_MAX_CLK_SRC_SUBRANGE;
+                          }
+                          clk->numOfSubrange = numSubRange;
+                          buf_u16 = (uint16_t*)dataBuf;
+                          for (int j = 0; j < numSubRange; j++){
+                            clk->subRange[j].dMin = U32FromU16x2(buf_u16[6*j + 2], buf_u16[6*j + 1]);
+                            clk->subRange[j].dMax = U32FromU16x2(buf_u16[6*j + 4], buf_u16[6*j + 3]);
+                            clk->subRange[j].dRes = U32FromU16x2(buf_u16[6*j + 6], buf_u16[6*j + 5]);
+                          }
+                        }
+                        break;
+                      }
+                      default:
+                        break;
+                    }
+                    break;
+                  }
+                  case(CS_CLOCK_VALID_CONTROL):{
+                    break;
+                  }
+                  default:
+                  break;
+                }
+                break;
+              }
+              case(CLOCK_SELECTOR):{
+                break;
+              }
+              default:
+              break;
+            }
+          } else if ((intfNum == info->streamIn.altSet[0].intfPtr->bInterfaceNumber) || (intfNum == info->streamOut.altSet[0].intfPtr->bInterfaceNumber)){
+            /*Audio Streaming Request*/
+          }
+          break;
+        }
+        default:
+        break;
+      }
+      break;
+    }
+    default:
+    break;
+  }
 }

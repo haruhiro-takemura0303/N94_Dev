@@ -88,7 +88,11 @@ typedef struct{
 }hcd_MsgBox_t;
 
 static inline uint16_t U16FromU8x2(uint8_t msb, uint8_t lsb){
-  return (((uint16_t)msb << 8) | lsb);
+  return (uint16_t)(((uint16_t)msb << 8) | lsb);
+}
+
+static inline uint32_t U32FromU16x2(uint16_t ms2b, uint16_t ls2b){
+  return (uint32_t)(((uint32_t)ms2b << 16) | ls2b);
 }
 
 void InitEHCI(void);
