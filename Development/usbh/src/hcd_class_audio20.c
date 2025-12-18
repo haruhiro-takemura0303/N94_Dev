@@ -219,7 +219,7 @@ static uint16_t parseControlInterface(config_rawdesc_t *confRaw, hcd_Audio_Endpo
   return descInc;
 }
 
-uint16_t parseStreamingInterface(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_Info_t* isochOutEp, hcd_Audio_Endpoint_Info_t* isochInEp, hcd_DeviceInfo_t* device)
+static uint16_t parseStreamingInterface(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_Info_t* isochOutEp, hcd_Audio_Endpoint_Info_t* isochInEp, hcd_DeviceInfo_t* device)
 {
   hcd_UAC20_Info_t* info;
   uint8_t nextDescType, nextDescSubType, curAltNum;
@@ -320,7 +320,7 @@ uint16_t parseStreamingInterface(config_rawdesc_t *confRaw, hcd_Audio_Endpoint_I
   return descInc;
 }
 
-hcd_Status_t createRequest(usb_SetupPacket_t* setup, uint32_t data0, uint32_t data1)
+static hcd_Status_t createRequest(usb_SetupPacket_t* setup, uint32_t data0, uint32_t data1)
 {
   int i = 0;
   hcd_Audio_Msg_t msg;
@@ -361,12 +361,13 @@ hcd_Status_t createRequest(usb_SetupPacket_t* setup, uint32_t data0, uint32_t da
   return HCD_OK;
 }
 
-hcd_Status_t sendInitialRequest(hcd_DeviceInfo_t* device)
+static hcd_Status_t sendInitialRequest(hcd_DeviceInfo_t* device)
 {
   hcd_UAC20_Info_t* info;
   usb_SetupPacket_t setup;
   uint8_t clockID, intfNum;
   hcd_Status_t ret;
+  csUsbDesc_AudioCtrlIfClkSrc_t* clkDesc;
   
   info = getInfo(device);
   if (!info){
@@ -377,17 +378,36 @@ hcd_Status_t sendInitialRequest(hcd_DeviceInfo_t* device)
   
   for (int i = 0; i < info->control.clock.numOfClockSrc; i++){
     clockID = info->control.clock.clockSrc[i].clockID;
-    MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_RANGE, UAC_WVALUE_CONTROL_SEL(CS_SAMFREQ_CONTROL), UAC_WINDEX_ENTITY(clockID) | intfNum, HCD_UAC20_IN_REQUEST_DATA_SIZE, &setup);
-    ret = createRequest(&setup, 0, 0);
-    if (ret){
-      break;
+    clkDesc = (csUsbDesc_AudioCtrlIfClkSrc_t*)info->control.entity[clockID].descPtr;
+    if ((clkDesc->bmControls & UAC20_BMCTRL_MSK) == BMCTRL_RW){
+      MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_RANGE, UAC_WVALUE_CONTROL_SEL(CS_SAMFREQ_CONTROL), UAC_WINDEX_ENTITY(clockID) | intfNum, HCD_UAC20_IN_REQUEST_DATA_SIZE, &setup);
+      ret = createRequest(&setup, 0, 0);
+      if (ret){
+        break;
+      }
+    } else if ((clkDesc->bmControls & UAC20_BMCTRL_MSK) == BMCTRL_RO){
+      MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_CUR, UAC_WVALUE_CONTROL_SEL(CS_SAMFREQ_CONTROL), UAC_WINDEX_ENTITY(clockID) | intfNum, 4, &setup);
+      ret = createRequest(&setup, 0, 0);
+      if (ret){
+        break;
+      }
+    } else {
+      info->control.clock.clockSrc[i].curSamFreq = HCD_UAC20_NO_SAMPLING_FREQ;
     }
   }
-  
   return ret;
 }
 
-void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1)
+static void initialRequestDone(void)
+{
+  hcd_Audio_Msg_t msg;
+  msg.msgType = HCD_AUDIO_INITIAL_REQ_DONE;
+  HcdAudio_SendMsg(&msg);
+}
+
+
+
+static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1)
 {
   hcd_UAC20_Info_t* info;
   usb_SetupPacket_t setup;
@@ -427,7 +447,7 @@ void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1)
       break;
     }
     case(BMREQ_TYPE_CLASS):{
-
+      
       switch(setup.BIT.bmRequestType.attr){
         case(BMREQ_ATTR_INTERFACE):{
           intfNum = setup.BIT.wIndex & 0xFF;
@@ -435,22 +455,44 @@ void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1)
             /*Audio Control Request*/
             entityID = setup.BIT.wIndex >> 8;
             entityType = info->control.entity[entityID].type;
-
+            
             switch(entityType){
               case(CLOCK_SOURCE):{
                 ctrlSel = setup.BIT.wValue >> 8;
                 
                 switch(ctrlSel){
                   case(CS_SAMFREQ_CONTROL):{
-
+                    
                     switch(setup.BIT.bRequest){
                       case(BREQ_CUR):{
+                        hcd_UAC20_ClockSrcInfo_t* clk;
+                        int k;
+                        for (int j = 0; j < info->control.clock.numOfClockSrc; j++){
+                          if (entityID == info->control.clock.clockSrc[j].clockID){
+                            clk = &info->control.clock.clockSrc[j];
+                            break;
+                          }
+                        }
+                        clk->curSamFreq = dataBuf[0];
+                        if (setup.BIT.bmRequestType.dir == BMREQ_DIR_IN){
+                          for (k = 0; k < info->control.clock.numOfClockSrc; k++){
+                            if ((info->control.clock.clockSrc[k].curSamFreq == 0) && (info->control.clock.clockSrc[k].numOfSubrange == 0)){
+                              break;
+                            }
+                          }
+                          if (k == info->control.clock.numOfClockSrc){
+                            initialRequestDone();
+                          }
+                        } else {
+                          // sampling freq set complete
+                        }
                         break;
                       }
                       case(BREQ_RANGE):{
                         hcd_UAC20_ClockSrcInfo_t* clk;
                         uint16_t numSubRange;
                         uint16_t* buf_u16;
+                        int k;
                         if (setup.BIT.bmRequestType.dir == BMREQ_DIR_IN){
                           numSubRange = dataBuf[0] & 0xFFFF;
                           for (int j = 0; j < info->control.clock.numOfClockSrc; j++){
@@ -459,7 +501,7 @@ void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1)
                               break;
                             }
                           }
-
+                          
                           if (numSubRange > HCD_UAC20_MAX_CLK_SRC_SUBRANGE){
                             numSubRange = HCD_UAC20_MAX_CLK_SRC_SUBRANGE;
                           }
@@ -470,11 +512,20 @@ void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1)
                             clk->subRange[j].dMax = U32FromU16x2(buf_u16[6*j + 4], buf_u16[6*j + 3]);
                             clk->subRange[j].dRes = U32FromU16x2(buf_u16[6*j + 6], buf_u16[6*j + 5]);
                           }
+                          
+                          for (k = 0; k < info->control.clock.numOfClockSrc; k++){
+                            if ((info->control.clock.clockSrc[k].curSamFreq == 0) && (info->control.clock.clockSrc[k].numOfSubrange == 0)){
+                              break;
+                            }
+                          }
+                          if (k == info->control.clock.numOfClockSrc){
+                            initialRequestDone();
+                          }
                         }
                         break;
                       }
                       default:
-                        break;
+                      break;
                     }
                     break;
                   }
@@ -505,4 +556,50 @@ void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1)
     default:
     break;
   }
+}
+
+hcd_Status_t setSamplingRate(uint32_t fs, uint8_t bitReso, uint8_t ifNum, hcd_DeviceInfo_t* device)
+{
+  hcd_UAC20_Info_t* info;
+  hcd_UAC20_StreamIf_t* streamIf;
+  hcd_UAC20_AltSet_t* targetAlt;
+  usb_SetupPacket_t setup;
+  uint8_t cSource, termID;
+  uint32_t* dataBuf;
+  int i;
+  
+  info = getInfo(device);
+  if (!info){
+    return HCD_NULL;
+  }
+
+  if (ifNum == info->streamOut.altSet[0].intfPtr->bInterfaceNumber){
+    streamIf = &info->streamOut;
+  } else {
+    streamIf = &info->streamIn;
+  }
+
+  /*Determine target alternate setting from bit resolution*/
+  for (i = 0; i < HCD_UAC20_MAX_ALTSET; i++){
+    if (streamIf->altSet[i].fmtPtr){
+      if (streamIf->altSet[i].fmtPtr->bBitResolution == bitReso){
+        targetAlt = &streamIf->altSet[i];
+        break;
+      }
+    }
+  }
+
+  if (i == HCD_UAC20_MAX_ALTSET){
+    return HCD_UNSUPPORTED_SAMFREQ;
+  }
+
+  MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_INTERFACE, BREQ_SET_INTERFACE, targetAlt->intfPtr->bAlternateSetting, ifNum, 0, &setup);
+  createRequest(&setup, 0, 0);
+
+  termID = targetAlt->strmIfPtr->bTerminalLink;
+  cSource = info->control.entity[termID].cSourceID;
+  if (cSource <= 0){
+    return HCD_INVALID_PARAM;
+  }
+
 }

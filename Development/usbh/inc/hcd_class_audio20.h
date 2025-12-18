@@ -27,6 +27,8 @@
 #define HCD_UAC20_MAX_IN_REQUEST_NUM    4
 #define HCD_UAC20_MAX_PENDED_SETUP      32
 
+#define HCD_UAC20_NO_SAMPLING_FREQ    0xFFFFFFFF
+
 typedef struct{
   usb_SetupPacket_t pendedSetup[HCD_UAC20_MAX_PENDED_SETUP];
   uint8_t enqPtr;
@@ -80,6 +82,15 @@ typedef enum{
 typedef enum{
   CX_CLOCK_SELECTOR_CONTROL = 1,
 } UAC20_ClkSelCtrl_t;
+
+#define UAC20_BMCTRL_MSK  3
+
+typedef enum{
+  BMCTRL_NO_IMPL = 0,
+  BMCTRL_RO,
+  BMCTRL_NOT_USE,
+  BMCTRL_RW,
+} UAC20_bmCtrl_t;
 
 #define UAC_WVALUE_CONTROL_SEL(x)     (x << 8)
 #define UAC_WINDEX_ENTITY(x)          (x << 8)
@@ -271,8 +282,14 @@ typedef struct{
 typedef struct{
   uint16_t clockID;
   uint16_t numOfSubrange;
+  uint32_t curSamFreq;
   hcd_UAC20_ClockSubrange_t subRange[HCD_UAC20_MAX_CLK_SRC_SUBRANGE];
 } hcd_UAC20_ClockSrcInfo_t;
+
+typedef struct{
+    hcd_UAC20_AltSet_t* curAltSet;
+    hcd_UAC20_AltSet_t altSet[HCD_UAC20_MAX_ALTSET];
+  } hcd_UAC20_StreamIf_t;
 
 typedef struct{
   hcd_DeviceInfo_t* device;
@@ -286,14 +303,8 @@ typedef struct{
       hcd_UAC20_ClockSrcInfo_t clockSrc[HCD_UAC20_MAX_CLK_SRC];
     } clock;
   } control;
-  struct{
-    hcd_UAC20_AltSet_t* curAltSet;
-    hcd_UAC20_AltSet_t altSet[HCD_UAC20_MAX_ALTSET];
-  } streamOut;
-  struct{
-    hcd_UAC20_AltSet_t* curAltSet;
-    hcd_UAC20_AltSet_t altSet[HCD_UAC20_MAX_ALTSET];
-  } streamIn;
+  hcd_UAC20_StreamIf_t streamOut;
+  hcd_UAC20_StreamIf_t streamIn;
 } hcd_UAC20_Info_t;
 
 
