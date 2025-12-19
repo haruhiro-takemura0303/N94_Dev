@@ -444,6 +444,16 @@ static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setu
   
   switch(setup.BIT.bmRequestType.type){
     case(BMREQ_TYPE_STANDARD):{
+      uint8_t targetAlt;
+      if (setup.BIT.bRequest == BREQ_SET_INTERFACE){
+        intfNum = setup.BIT.wIndex;
+        targetAlt = setup.BIT.wValue;
+        if (intfNum == info->streamOut.altSet[0].intfPtr->bInterfaceNumber){
+          info->streamOut.curAltSet = &info->streamOut.altSet[targetAlt];
+        } else {
+          info->streamIn.curAltSet = &info->streamIn.altSet[targetAlt];
+        }
+      }
       break;
     }
     case(BMREQ_TYPE_CLASS):{
@@ -473,7 +483,7 @@ static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setu
                             break;
                           }
                         }
-                        clk->curSamFreq = dataBuf[0];
+                        clk->curSamFreq = dataBuf[0]; /*Write Sampling Freq in Clock Info*/
                         if (setup.BIT.bmRequestType.dir == BMREQ_DIR_IN){
                           for (k = 0; k < info->control.clock.numOfClockSrc; k++){
                             if ((info->control.clock.clockSrc[k].curSamFreq == 0) && (info->control.clock.clockSrc[k].numOfSubrange == 0)){
@@ -538,6 +548,20 @@ static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setu
                 break;
               }
               case(CLOCK_SELECTOR):{
+                uint8_t selNum;
+                uint8_t* baSrc;
+                csUsbDesc_AudioCtrlIfClkSrc_t* srcDesc;
+                csUsbDesc_AudioCtrlIfClkSel_t* selDesc = (csUsbDesc_AudioCtrlIfClkSel_t*)info->control.entity[entityID].descPtr;
+                baSrc = (uint8_t*)(&selDesc->baCSourceID);
+                ctrlSel = setup.BIT.wValue >> 8;
+                if ((ctrlSel == CX_CLOCK_SELECTOR_CONTROL) && (setup.BIT.bmRequestType.dir == BMREQ_DIR_OUT) && (setup.BIT.bRequest == BREQ_CUR)){
+                  selNum = (uint8_t)(dataBuf[0] & 0xFF);
+                  info->control.entity[entityID].cSourceID = baSrc[selNum - 1];
+                  srcDesc = (csUsbDesc_AudioCtrlIfClkSrc_t*)info->control.entity[baSrc[selNum - 1]].descPtr;
+                  if ((srcDesc->bmControls & UAC20_BMCTRL_MSK) == BMCTRL_RO){
+                    // sampling freq set complete
+                  }
+                }
                 break;
               }
               default:
@@ -558,27 +582,72 @@ static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setu
   }
 }
 
+hcd_Status_t getSupportClockSource(uint32_t fs, hcd_UAC20_ClockSrcInfo_t* clkSrc, UAC20_bmCtrl_t bmCtrl)
+{
+  int i;
+  usb_SetupPacket_t setup;
+  hcd_Status_t ret = HCD_OK;
+  
+  switch(bmCtrl){
+    case(BMCTRL_NO_IMPL):{
+      ret = HCD_UNSUPPORTED_SAMFREQ;
+      break;
+    }
+    case(BMCTRL_RO):{
+      if (clkSrc->curSamFreq != fs){
+        ret = HCD_UNSUPPORTED_SAMFREQ;
+      }
+      break;
+    }
+    case(BMCTRL_NOT_USE):{
+      ret = HCD_UNSUPPORTED_SAMFREQ;
+      break;
+    }
+    case(BMCTRL_RW):{
+      for (i = 0; i < clkSrc->numOfSubrange; i++){
+        if((fs == clkSrc->subRange[i].dMin) || (fs == clkSrc->subRange[i].dMax)){
+          break;
+        } else if ((clkSrc->subRange[i].dMin < fs) && (clkSrc->subRange[i].dMax > fs) && clkSrc->subRange[i].dRes){
+          if (((fs - clkSrc->subRange[i].dMin) % clkSrc->subRange[i].dRes) == 0){
+            break;
+          }
+        }
+      }
+      if (i == clkSrc->numOfSubrange){
+        ret = HCD_UNSUPPORTED_SAMFREQ;
+      }
+      break;
+    }
+  }
+  
+  return ret;
+}
+
 hcd_Status_t setSamplingRate(uint32_t fs, uint8_t bitReso, uint8_t ifNum, hcd_DeviceInfo_t* device)
 {
+  int i;
   hcd_UAC20_Info_t* info;
   hcd_UAC20_StreamIf_t* streamIf;
   hcd_UAC20_AltSet_t* targetAlt;
   usb_SetupPacket_t setup;
-  uint8_t cSource, termID;
-  uint32_t* dataBuf;
-  int i;
+  uint8_t cSource, termID, bmCtrl, idx;
+  uint8_t* baCSrc;
+  csUsbDesc_AudioCtrlIfClkSrc_t* srcDesc;
+  csUsbDesc_AudioCtrlIfClkSel_t* selDesc;
+  hcd_UAC20_ClockSrcInfo_t* clkSrc;
+  hcd_Status_t ret = HCD_OK;
   
   info = getInfo(device);
   if (!info){
     return HCD_NULL;
   }
-
+  
   if (ifNum == info->streamOut.altSet[0].intfPtr->bInterfaceNumber){
     streamIf = &info->streamOut;
   } else {
     streamIf = &info->streamIn;
   }
-
+  
   /*Determine target alternate setting from bit resolution*/
   for (i = 0; i < HCD_UAC20_MAX_ALTSET; i++){
     if (streamIf->altSet[i].fmtPtr){
@@ -588,18 +657,73 @@ hcd_Status_t setSamplingRate(uint32_t fs, uint8_t bitReso, uint8_t ifNum, hcd_De
       }
     }
   }
-
+  
   if (i == HCD_UAC20_MAX_ALTSET){
     return HCD_UNSUPPORTED_SAMFREQ;
   }
-
+  
   MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_INTERFACE, BREQ_SET_INTERFACE, targetAlt->intfPtr->bAlternateSetting, ifNum, 0, &setup);
   createRequest(&setup, 0, 0);
-
+  
   termID = targetAlt->strmIfPtr->bTerminalLink;
   cSource = info->control.entity[termID].cSourceID;
   if (cSource <= 0){
     return HCD_INVALID_PARAM;
   }
-
+  
+  switch(info->control.entity[cSource].type){
+    case(CLOCK_SOURCE):{
+      srcDesc = (csUsbDesc_AudioCtrlIfClkSrc_t*)info->control.entity[cSource].descPtr;
+      for (int j = 0; j < info->control.clock.numOfClockSrc; j++){
+        if (info->control.clock.clockSrc[j].clockID == cSource){
+          clkSrc = &info->control.clock.clockSrc[j];
+          break;
+        }
+      }
+      ret = getSupportClockSource(fs, clkSrc, (srcDesc->bmControls & UAC20_BMCTRL_MSK));
+      if (ret == HCD_OK && bmCtrl == BMCTRL_RW){
+        MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_CUR, UAC_WVALUE_CONTROL_SEL(CS_SAMFREQ_CONTROL), UAC_WINDEX_ENTITY(cSource) | info->control.intfPtr->bInterfaceNumber, 4, &setup);
+        ret = createRequest(&setup, fs, 0);
+      }
+      break;
+    }
+    case(CLOCK_SELECTOR):{
+      selDesc = (csUsbDesc_AudioCtrlIfClkSel_t*)info->control.entity[cSource].descPtr;
+      baCSrc = (uint8_t*)(&selDesc->baCSourceID);
+      for (idx = 0; idx < selDesc->bNrInPins; idx++){
+        srcDesc = (csUsbDesc_AudioCtrlIfClkSrc_t*)info->control.entity[baCSrc[idx]].descPtr;
+        for (int j = 0; j < info->control.clock.numOfClockSrc; j++){
+          if (info->control.clock.clockSrc[j].clockID == baCSrc[idx]){
+            clkSrc = &info->control.clock.clockSrc[j];
+            break;
+          }
+        }
+        ret = getSupportClockSource(fs, clkSrc, (srcDesc->bmControls & UAC20_BMCTRL_MSK));
+        if (ret == HCD_OK){
+          break;
+        }
+      }
+      if (idx == selDesc->bNrInPins){
+        ret = HCD_UNSUPPORTED_SAMFREQ;
+      } else {
+        MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_CUR, UAC_WVALUE_CONTROL_SEL(CX_CLOCK_SELECTOR_CONTROL), UAC_WINDEX_ENTITY(cSource) | info->control.intfPtr->bInterfaceNumber, 1, &setup);
+        ret = createRequest(&setup, idx + 1, 0);
+        if (ret){
+          break;
+        }
+        if (bmCtrl == BMCTRL_RW){
+          MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_CUR, UAC_WVALUE_CONTROL_SEL(CS_SAMFREQ_CONTROL), UAC_WINDEX_ENTITY(baCSrc[idx]) | info->control.intfPtr->bInterfaceNumber, 4, &setup);
+          ret = createRequest(&setup, fs, 0);
+        }
+      }
+      break;
+    }
+    case(CLOCK_MULTIPLIER):{
+      break;
+    }
+    default:
+    break;
+  }
+  
+  return ret;
 }
