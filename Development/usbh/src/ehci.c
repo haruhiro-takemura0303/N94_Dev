@@ -5,6 +5,7 @@
 */
 
 #include "ehci.h"
+#include "board.h"
 
 static ehci_int_cb_t st_EhciInterrupt;
 
@@ -73,7 +74,6 @@ static void ehciHandler(void)
 void EHCI_SysInit(void)
 {
   /*Enable High-Speed PHY*/
-  UsbPhy_HighSpeedInit();
   NVIC_SetPriority(USB1_HS_IRQn, 0);
   NVIC_EnableIRQ(USB1_HS_IRQn);
   NVIC_SetVector(USB1_HS_IRQn, (uint32_t)(ehciHandler));
@@ -83,12 +83,9 @@ void EHCI_SysInit(void)
   
   /*EHCI Init*/
   EHCI->USBCMD = (USBHS_USBCMD_ITC(0x01) | USBHS_USBCMD_RS_MASK);
-  EHCI->USBINTR = (USBHS_USBINTR_UE_MASK | USBHS_USBINTR_UEE_MASK | USBHS_USBINTR_PCE_MASK | USBHS_USBINTR_SEE_MASK);
+  EHCI->USBINTR = (USBHS_USBINTR_UE_MASK | USBHS_USBINTR_UEE_MASK | USBHS_USBINTR_PCE_MASK | USBHS_USBINTR_SEE_MASK | USBHS_USBINTR_TIE0_MASK);
   
   /*NXP-EHCI don't use config flag because companion controller is absent*/
-  
-  /*Port Start*/
-  EHCI->PORTSC1 |= USBHS_PORTSC1_PP_MASK;
   
 }
 

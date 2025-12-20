@@ -20,7 +20,7 @@ static hcd_Status_t enqueue(usb_SetupPacket_t* setup)
   if (st_PendBox.deqPtr - st_PendBox.enqPtr != 1){
     memcpy(&st_PendBox.pendedSetup[st_PendBox.enqPtr], setup, sizeof(usb_SetupPacket_t));
     st_PendBox.enqPtr++;
-    if (st_PendBox.enqPtr == HCD_PERIODIC_MSGBOX_SIZE){
+    if (st_PendBox.enqPtr == HCD_UAC20_MAX_PENDED_SETUP){
       st_PendBox.enqPtr = 0;
     }
     ret = HCD_OK;
@@ -36,7 +36,7 @@ static hcd_Status_t dequeue(usb_SetupPacket_t* setup)
   if (st_PendBox.deqPtr != st_PendBox.enqPtr){
     memcpy(setup, &st_PendBox.pendedSetup[st_PendBox.deqPtr], sizeof(usb_SetupPacket_t));
     st_PendBox.deqPtr++;
-    if (st_PendBox.deqPtr == HCD_PERIODIC_MSGBOX_SIZE){
+    if (st_PendBox.deqPtr == HCD_UAC20_MAX_PENDED_SETUP){
       st_PendBox.deqPtr = 0;
     }
     ret = HCD_OK;
@@ -320,10 +320,13 @@ static uint16_t parseStreamingInterface(config_rawdesc_t *confRaw, hcd_Audio_End
   return descInc;
 }
 
-static hcd_Status_t createRequest(usb_SetupPacket_t* setup, uint32_t data0, uint32_t data1)
+static hcd_Status_t createRequest(usb_SetupPacket_t* setup, uint32_t data0, uint32_t data1, hcd_DeviceInfo_t* device)
 {
   int i = 0;
   hcd_Audio_Msg_t msg;
+	msg.msgType = HCD_AUDIO_CTRL_REQ;
+	msg.devAddr = device->devAddr;
+	msg.bufPtr = NULL;
   if (setup->BIT.bmRequestType.dir == BMREQ_DIR_IN){
     for (i = 0; i < HCD_UAC20_MAX_IN_REQUEST_NUM; i++){
       if ((st_ReqInBuf[i].setup.DWORD[0] == 0) && (st_ReqInBuf[i].setup.DWORD[1] == 0)){
@@ -390,13 +393,13 @@ static hcd_Status_t sendInitialRequest(hcd_DeviceInfo_t* device)
     clkDesc = (csUsbDesc_AudioCtrlIfClkSrc_t*)info->control.entity[clockID].descPtr;
     if ((clkDesc->bmControls & UAC20_BMCTRL_MSK) == BMCTRL_RW){
       MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_RANGE, UAC_WVALUE_CONTROL_SEL(CS_SAMFREQ_CONTROL), UAC_WINDEX_ENTITY(clockID) | intfNum, HCD_UAC20_IN_REQUEST_DATA_SIZE, &setup);
-      ret = createRequest(&setup, 0, 0);
+      ret = createRequest(&setup, 0, 0, device);
       if (ret){
         break;
       }
     } else if ((clkDesc->bmControls & UAC20_BMCTRL_MSK) == BMCTRL_RO){
       MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_CUR, UAC_WVALUE_CONTROL_SEL(CS_SAMFREQ_CONTROL), UAC_WINDEX_ENTITY(clockID) | intfNum, 4, &setup);
-      ret = createRequest(&setup, 0, 0);
+      ret = createRequest(&setup, 0, 0, device);
       if (ret){
         break;
       }
@@ -407,9 +410,10 @@ static hcd_Status_t sendInitialRequest(hcd_DeviceInfo_t* device)
   return ret;
 }
 
-static void initialRequestDone(void)
+static void initialRequestDone(hcd_DeviceInfo_t* device)
 {
   hcd_Audio_Msg_t msg;
+  msg.devAddr = device->devAddr;
   msg.msgType = HCD_AUDIO_INITIAL_REQ_DONE;
   HcdAudio_SendMsg(&msg);
 }
@@ -603,7 +607,7 @@ static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setu
                             }
                           }
                           if (k == info->control.clock.numOfClockSrc){
-                            initialRequestDone();
+                            initialRequestDone(device);
                           }
                         } else {
                           setSamplingRateComplete(info, clk->curSamFreq, entityID);
@@ -641,7 +645,7 @@ static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setu
                             }
                           }
                           if (k == info->control.clock.numOfClockSrc){
-                            initialRequestDone();
+                            initialRequestDone(device);
                           }
                         }
                         break;
@@ -776,7 +780,7 @@ hcd_Status_t setSamplingRate(uint32_t fs, uint8_t bitReso, uint8_t ifNum, hcd_De
   }
   
   MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_INTERFACE, BREQ_SET_INTERFACE, targetAlt->intfPtr->bAlternateSetting, ifNum, 0, &setup);
-  createRequest(&setup, 0, 0);
+  createRequest(&setup, 0, 0, device);
   
   termID = targetAlt->strmIfPtr->bTerminalLink;
   cSource = info->control.entity[termID].cSourceID;
@@ -793,10 +797,11 @@ hcd_Status_t setSamplingRate(uint32_t fs, uint8_t bitReso, uint8_t ifNum, hcd_De
           break;
         }
       }
-      ret = getSupportClockSource(fs, clkSrc, (srcDesc->bmControls & UAC20_BMCTRL_MSK));
+			bmCtrl = (srcDesc->bmControls & UAC20_BMCTRL_MSK);
+      ret = getSupportClockSource(fs, clkSrc, bmCtrl);
       if (ret == HCD_OK && bmCtrl == BMCTRL_RW){
         MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_CUR, UAC_WVALUE_CONTROL_SEL(CS_SAMFREQ_CONTROL), UAC_WINDEX_ENTITY(cSource) | info->control.intfPtr->bInterfaceNumber, 4, &setup);
-        ret = createRequest(&setup, fs, 0);
+        ret = createRequest(&setup, fs, 0, device);
       }
       break;
     }
@@ -811,7 +816,8 @@ hcd_Status_t setSamplingRate(uint32_t fs, uint8_t bitReso, uint8_t ifNum, hcd_De
             break;
           }
         }
-        ret = getSupportClockSource(fs, clkSrc, (srcDesc->bmControls & UAC20_BMCTRL_MSK));
+				bmCtrl = (srcDesc->bmControls & UAC20_BMCTRL_MSK);
+        ret = getSupportClockSource(fs, clkSrc, bmCtrl);
         if (ret == HCD_OK){
           break;
         }
@@ -820,13 +826,13 @@ hcd_Status_t setSamplingRate(uint32_t fs, uint8_t bitReso, uint8_t ifNum, hcd_De
         ret = HCD_UNSUPPORTED_SAMFREQ;
       } else {
         MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_CUR, UAC_WVALUE_CONTROL_SEL(CX_CLOCK_SELECTOR_CONTROL), UAC_WINDEX_ENTITY(cSource) | info->control.intfPtr->bInterfaceNumber, 1, &setup);
-        ret = createRequest(&setup, idx + 1, 0);
+        ret = createRequest(&setup, idx + 1, 0, device);
         if (ret){
           break;
         }
         if (bmCtrl == BMCTRL_RW){
           MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_CLASS, BMREQ_ATTR_INTERFACE, BREQ_CUR, UAC_WVALUE_CONTROL_SEL(CS_SAMFREQ_CONTROL), UAC_WINDEX_ENTITY(baCSrc[idx]) | info->control.intfPtr->bInterfaceNumber, 4, &setup);
-          ret = createRequest(&setup, fs, 0);
+          ret = createRequest(&setup, fs, 0, device);
         }
       }
       break;

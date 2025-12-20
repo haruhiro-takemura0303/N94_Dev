@@ -6,8 +6,8 @@
 
 #include "hcd_async.h"
 
-__ALIGNED(32) static ehci_QH_array_t st_QH[HCD_ASYNC_NUM_OF_QH];
-__ALIGNED(32) static ehci_qTD_t st_qTD[HCD_ASYNC_NUM_OF_QTD];
+static __ALIGNED(32) ehci_QH_array_t st_QH[HCD_ASYNC_NUM_OF_QH];
+static __ALIGNED(32) ehci_qTD_t st_qTD[HCD_ASYNC_NUM_OF_QTD];
 
 
 static hcd_Async_QH_Mgr_t st_QHMgr[HCD_ASYNC_NUM_OF_QH];
@@ -45,13 +45,13 @@ static int32_t getNewqTD(uint8_t devAddr, uint8_t epNum)
   return ret;  
 }
 
-static int32_t getMgr(uint8_t devAddr, uint8_t epNum, hcd_Async_QH_Mgr_t* mgr)
+static int32_t getMgr(uint8_t devAddr, uint8_t epNum, hcd_Async_QH_Mgr_t** mgr)
 {
   int32_t ret = -1;
   for (int i = 0; i < HCD_ASYNC_NUM_OF_QH; i++){
     if (st_QHMgr[i].devAddr == devAddr && st_QHMgr[i].epNum == epNum){
       ret = i;
-      mgr = &st_QHMgr[i];
+      *mgr = &st_QHMgr[i];
       break;
     }
   }
@@ -65,7 +65,7 @@ static int32_t setEp0Transfer(uint8_t devAddr)
   ehci_qTD_t *setupqTD, *dataqTD, *statusqTD;
   hcd_Async_QH_Mgr_t* mgr;
   
-  idx = getMgr(devAddr, 0, mgr);
+  idx = getMgr(devAddr, 0, &mgr);
   if (idx < 0){
     return -1;
   }
@@ -127,7 +127,7 @@ static int32_t startTransfer(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
   ehci_qTD_t* qTD;
   hcd_Async_QH_Mgr_t* mgr;
   
-  idx = getMgr(devAddr, epNum, mgr);
+  idx = getMgr(devAddr, epNum, &mgr);
   if (idx < 0){
     return -1;
   }
@@ -165,10 +165,11 @@ static int32_t setAddress(uint8_t devAddr)
   ehci_QH_t* QH;
   hcd_Async_QH_Mgr_t* mgr;
   
-  idx = getMgr(0, 0, mgr);
+  idx = getMgr(0, 0, &mgr);
   if (idx < 0){
     return -1;
   }
+	mgr->devAddr = devAddr;
   QH = &st_QH[idx].QH;
   
   QH->DWORD1_EC0 &= ~EHCI_QH_EC0_DA(0x7F);
@@ -183,7 +184,7 @@ static int32_t setEp0Mps(uint8_t devAddr, uint16_t mps)
   ehci_QH_t* QH;
   hcd_Async_QH_Mgr_t* mgr;
   
-  idx = getMgr(devAddr, 0, mgr);
+  idx = getMgr(devAddr, 0, &mgr);
   if (idx < 0){
     return -1;
   }
@@ -431,7 +432,7 @@ int32_t CloseAsyncEndpoint(uint8_t devAddr, uint8_t epNum)
   
   EHCI_DisInt();
   
-  idx = getMgr(devAddr, epNum, mgr);
+  idx = getMgr(devAddr, epNum, &mgr);
   if (idx < 0){
     EHCI_EnaInt();
     return -1;

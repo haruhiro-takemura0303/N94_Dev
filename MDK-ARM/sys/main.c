@@ -51,3 +51,10 @@ int main (void)
 	while(1){
 	}
 }
+
+void HardFault_Handler(void)
+{
+	__BKPT(0);
+	while(1){
+	}
+}

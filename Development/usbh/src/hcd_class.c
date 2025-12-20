@@ -10,6 +10,8 @@
 #include "hcd_class_audio.h"
 #include "hcd_class_audio20.h"
 
+#include "hcd_class_dummy_hid.h"
+
 static hcd_ClassMgr_t st_ClassMgr[MAX_DEVICE_NUM];
 static hcd_ClassDriver_t st_ClassDriver[MAX_DEFINED_CLASS_CODE + 1];
 
@@ -30,7 +32,7 @@ hcd_Status_t ParseConfigurationDescriptor(hcd_DeviceInfo_t* device, config_rawde
   uint8_t bLength;
   uint16_t instRdPtr = 0;
   uint16_t retReadPtr;
-  uint8_t numIfs, curCls, clsCount;
+  uint8_t numIfs, curCls, clsCount, curIf;
   int clsIdx = -1;
   hcd_Status_t ret;
   usbDesc_Interface_t* intfDesc;
@@ -47,20 +49,21 @@ hcd_Status_t ParseConfigurationDescriptor(hcd_DeviceInfo_t* device, config_rawde
   if (clsIdx < 0){
     return HCD_FULL;
   }
-
+  
   /*The Head of Config Raw Desc should be a Configuration Descriptor*/
-	if (confRaw->rawDesc[confRaw->readPtr] != 0x09 || confRaw->rawDesc[confRaw->readPtr + 1] != DESCTYPE_CONFIG){
-		return HCD_INVALID_DESC;
-	}
-
-	/*Confoguration Descriptor Copy*/
-	bLength = confRaw->rawDesc[confRaw->readPtr];
-	memcpy(configDesc, &confRaw->rawDesc[confRaw->readPtr], bLength);
-	confRaw->readPtr += bLength;
-	instRdPtr += bLength;
-
+  if (confRaw->rawDesc[confRaw->readPtr] != 0x09 || confRaw->rawDesc[confRaw->readPtr + 1] != DESCTYPE_CONFIG){
+    return HCD_INVALID_DESC;
+  }
+  
+  /*Confoguration Descriptor Copy*/
+  bLength = confRaw->rawDesc[confRaw->readPtr];
+  memcpy(configDesc, &confRaw->rawDesc[confRaw->readPtr], bLength);
+  confRaw->readPtr += bLength;
+  instRdPtr += bLength;
+  
   /*Parse Interface Descriptor/Interface Assoc Descriptor*/
   numIfs = configDesc->desc.bNumInterfaces;
+  curIf = 0xFF;
   clsCount = 0;
   for (int j = 0; j < numIfs;){
     switch(confRaw->rawDesc[confRaw->readPtr + 1]){
@@ -81,7 +84,11 @@ hcd_Status_t ParseConfigurationDescriptor(hcd_DeviceInfo_t* device, config_rawde
         } else {
           return HCD_UNSUPPORTED_CLASS;
         }
-        j++;
+        if (curIf != intfDesc->bInterfaceNumber){
+          /*An interface may have more then 1 Interface Descriptor because of AltSetting, index j is inclemented only when new interface number appears.*/
+          curIf = intfDesc->bInterfaceNumber;
+          j++; 
+        }
         break;
       }
       case(DESCTYPE_INTERFACEASSOC):{
@@ -104,7 +111,7 @@ hcd_Status_t ParseConfigurationDescriptor(hcd_DeviceInfo_t* device, config_rawde
         break;
       }
       default:
-        return HCD_INVALID_DESC;
+      return HCD_INVALID_DESC;
     }
   }
   if (confRaw->fullLength != confRaw->readPtr){
@@ -127,10 +134,10 @@ hcd_Status_t StartClassDriver(hcd_DeviceInfo_t* device)
   }
   for (int i = 0; i < 3; i++){
     if (st_ClassDriver[mgr->clsCode[i]].initClass){
-      st_ClassDriver[i].initClass(device);
+      st_ClassDriver[mgr->clsCode[i]].initClass(device);
     }
   }
-
+  
   return HCD_OK;
 }
 
@@ -143,7 +150,7 @@ hcd_Status_t RegisterClassDriver(hcd_ClassDriver_t* map, uint8_t clsCode)
   st_ClassDriver[clsCode].parseIAD = map->parseIAD;
   st_ClassDriver[clsCode].initClass =  map->initClass;
   st_ClassDriver[clsCode].terinateClass = map->terinateClass;
-
+  
   return HCD_OK;
 }
 
@@ -153,5 +160,9 @@ void HcdClass_InitClassDrivers(void)
   HcdUAC20_InitUAC20();
   HcdAudio_InitAudioClass();
   HcdAudioMgr_InitUAC();
+
+  /*HID(Dummy)*/
+  HcdDummyHid_InitDriver();
+
 }
 

@@ -430,6 +430,11 @@
           <GroupName>usbh_ehci</GroupName>
           <Files>
             <File>
+              <FileName>hcd_class_dummy_hid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\usbh\src\hcd_class_dummy_hid.c</FilePath>
+            </File>
+            <File>
               <FileName>hcd_class_audio20.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\usbh\src\hcd_class_audio20.c</FilePath>

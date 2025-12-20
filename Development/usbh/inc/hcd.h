@@ -37,7 +37,7 @@ typedef struct{
 }string_info_t;
 
 enum{
-  HCDMSG_CTRL = 0,
+  HCDMSG_CTRL = 1,
   HCDMSG_PARSE_CONFIG,
   HCDMSG_GPTIMER,
   HCDMSG_GPTIMER_COMPLETE,

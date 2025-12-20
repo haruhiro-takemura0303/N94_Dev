@@ -19,7 +19,7 @@ __ALIGNED(4096) static hcd_Audio_IsochIn_Raw_Buf_t st_IsochInRawBuf1[NUM_OF_MAX_
 static uint32_t st_IsochInContBuf0[NUM_OF_MAX_AUDIO_DEVICE][256];
 static uint32_t st_IsochInContBuf1[NUM_OF_MAX_AUDIO_DEVICE][256];
 static uint32_t st_InterruptBuf[NUM_OF_MAX_AUDIO_DEVICE][2];
-static hcd_Audio_MsgBox_t st_MsgBox;
+static hcd_Audio_MsgBox_t st_AudioMsgBox;
 
 static void interruptComplete(uint8_t devAddr, uint8_t epNum, uint16_t trnsLen);
 
@@ -51,11 +51,11 @@ static hcd_Status_t enqueueMsg(hcd_Audio_Msg_t* msg)
 {
   hcd_Status_t ret;
   EHCI_DisInt();
-  if (st_MsgBox.deqPtr - st_MsgBox.enqPtr != 1){
-    memcpy(&st_MsgBox.msg[st_MsgBox.enqPtr], msg, sizeof(hcd_Audio_Msg_t));
-    st_MsgBox.enqPtr++;
-    if (st_MsgBox.enqPtr == HCD_PERIODIC_MSGBOX_SIZE){
-      st_MsgBox.enqPtr = 0;
+  if (st_AudioMsgBox.deqPtr - st_AudioMsgBox.enqPtr != 1){
+    memcpy(&st_AudioMsgBox.msg[st_AudioMsgBox.enqPtr], msg, sizeof(hcd_Audio_Msg_t));
+    st_AudioMsgBox.enqPtr++;
+    if (st_AudioMsgBox.enqPtr == HCD_AUDIO_MSGBOX_SIZE){
+      st_AudioMsgBox.enqPtr = 0;
     }
     ret = HCD_OK;
   } else {
@@ -72,11 +72,11 @@ static hcd_Status_t dequeueMsg(hcd_Audio_Msg_t* msg)
 {
   hcd_Status_t ret;
   EHCI_DisInt();
-  if (st_MsgBox.deqPtr != st_MsgBox.enqPtr){
-    memcpy(msg, &st_MsgBox.msg[st_MsgBox.deqPtr], sizeof(hcd_Audio_Msg_t));
-    st_MsgBox.deqPtr++;
-    if (st_MsgBox.deqPtr == HCD_PERIODIC_MSGBOX_SIZE){
-      st_MsgBox.deqPtr = 0;
+  if (st_AudioMsgBox.deqPtr != st_AudioMsgBox.enqPtr){
+    memcpy(msg, &st_AudioMsgBox.msg[st_AudioMsgBox.deqPtr], sizeof(hcd_Audio_Msg_t));
+    st_AudioMsgBox.deqPtr++;
+    if (st_AudioMsgBox.deqPtr == HCD_AUDIO_MSGBOX_SIZE){
+      st_AudioMsgBox.deqPtr = 0;
     }
     ret = HCD_OK;
   } else {
@@ -101,22 +101,24 @@ static uint16_t parseInterface(config_rawdesc_t *confRaw, hcd_DeviceInfo_t* devi
   
   bIntfSub = (UAC_SubClass_t)descPtr->bInterfaceSubclass;
   protocol = getProtocol(device);
-  if ((protocol == NULL) && (st_NumOfAudioDevice < NUM_OF_MAX_AUDIO_DEVICE)){
-    st_CurrentUAC[st_NumOfAudioDevice] = &st_UAC10;
-    st_Driver[st_NumOfAudioDevice].device = device;
-    st_NumOfAudioDevice++;
-    protocol = &st_UAC10;
-  } else if (st_NumOfAudioDevice >= NUM_OF_MAX_AUDIO_DEVICE){
-    return 0;
+  if (protocol == NULL){
+    if (st_NumOfAudioDevice < NUM_OF_MAX_AUDIO_DEVICE){
+      st_CurrentUAC[st_NumOfAudioDevice] = &st_UAC10;
+      st_Driver[st_NumOfAudioDevice].device = device;
+      st_NumOfAudioDevice++;
+      protocol = &st_UAC10;
+    } else {
+      return 0;
+    }
   }
   driver = getDriver(device->devAddr);
   
   switch(bIntfSub){
     case(UAC_CONTROL): rtnReadBytes = protocol->parseControlInterface(confRaw, &driver->ep.interrupt, device); break;
     case(UAC_STREAMING): rtnReadBytes = protocol->parseStreamingInterface(confRaw, &driver->ep.isochOut, &driver->ep.isochIn, device); break;
-		default: break;
+    default: break;
   }
-
+  
   return rtnReadBytes;
 }
 
@@ -136,7 +138,7 @@ static uint16_t parseIAD(config_rawdesc_t *confRaw, hcd_DeviceInfo_t* device)
     st_NumOfAudioDevice++;
     rtnReadBytes = sizeof(usbDesc_InterfaceAssoc_t);
   }
-
+  
   return rtnReadBytes;
 }
 
@@ -156,12 +158,12 @@ static void initClass(hcd_DeviceInfo_t* device)
   msg.msgType = HCD_AUDIO_INITIAL_REQ;
   msg.devAddr = device->devAddr;
   enqueueMsg(&msg);
-
+  
 }
 
 static void terminateClass(hcd_DeviceInfo_t* device)
 {
-
+  
 }
 
 static void requestComplete(uint16_t transLen, uint8_t devAddr, uint32_t* ep0Buf)
@@ -179,7 +181,7 @@ static void requestComplete(uint16_t transLen, uint8_t devAddr, uint32_t* ep0Buf
 
 static void isochronousOutComplete(uint8_t devAddr, uint8_t epNum, uint16_t nextTxSize, uint32_t* bufPtr, hcd_Periodic_IsochIn_ActTxInfo_t* inTxMap)
 {
-  getDriver(devAddr)->isochOutCallback(bufPtr, nextTxSize);
+  //getDriver(devAddr)->isochOutCallback(bufPtr, nextTxSize);
 }
 
 static void isochronousInComplete(uint8_t devAddr, uint8_t epNum, uint16_t nextTxSize, uint32_t* bufPtr, hcd_Periodic_IsochIn_ActTxInfo_t* inTxMap)
@@ -188,6 +190,7 @@ static void isochronousInComplete(uint8_t devAddr, uint8_t epNum, uint16_t nextT
   hcd_Audio_Transfer_Driver_t* driver = getDriver(devAddr);
   uint32_t* contBuf;
   hcd_Audio_IsochIn_Raw_Buf_t* rawBuf;
+	uint8_t *u8Cont, *u8Raw;
   if (bufPtr == (uint32_t*)driver->isochInRaw[0]){
     contBuf = driver->isochInContinuousBuf[0];
     rawBuf = driver->isochInRaw[0];
@@ -197,16 +200,20 @@ static void isochronousInComplete(uint8_t devAddr, uint8_t epNum, uint16_t nextT
   }
   for (int i = 0; i < HCD_PERIODIC_iTD_SINGLE_BUF; i++){
     for (int j = 0; j < MAX_iTD_TSC; j++){
-      memcpy(&contBuf[currentTxSize], &rawBuf->frame[i].mFrame[j].buf[0], inTxMap->frame[i].mFrame[j]);
+			u8Cont = (uint8_t*)&contBuf[(currentTxSize >> 2)];
+			u8Raw = (uint8_t*)&rawBuf->frame[i].mFrame[j].buf[0];
+			for (int k = 0; k < inTxMap->frame[i].mFrame[j]; k++){
+				u8Cont[k] = u8Raw[k];
+			}
       currentTxSize += inTxMap->frame[i].mFrame[j];
     }
   }
-  driver->isochInCallback(contBuf, currentTxSize);
+  //driver->isochInCallback(contBuf, currentTxSize);
 }
 
 static void interruptComplete(uint8_t devAddr, uint8_t epNum, uint16_t trnsLen)
 {
-
+  
 }
 
 static void audioClassTask(void)
@@ -217,9 +224,9 @@ static void audioClassTask(void)
   hcd_Audio_Transfer_Driver_t* driver;
   hcd_Audio_Protocol_Driver_t* protocol;
   uint8_t bps;
-
+  
   NVIC_ClearPendingIRQ(HcdAudio_IRQn);
-
+  
   for(;;){
     status = dequeueMsg(&msg);
     if (status != HCD_OK){
@@ -228,7 +235,7 @@ static void audioClassTask(void)
     
     driver = getDriver(msg.devAddr);
     protocol = getProtocol(driver->device);
-
+    
     switch(msg.msgType){
       case(HCD_AUDIO_CTRL_REQ):{
         hcdMsg.type = HCDMSG_CTRL;
@@ -236,7 +243,9 @@ static void audioClassTask(void)
         hcdMsg.cont.ctrl.setup.DWORD[1] = msg.other.setup.DWORD[1];
         if ((hcdMsg.cont.ctrl.setup.BIT.bmRequestType.dir == BMREQ_DIR_OUT) && hcdMsg.cont.ctrl.setup.BIT.wLength){
           hcdMsg.cont.ctrl.sendDataBuf = msg.bufPtr;
-        }
+        } else {
+					hcdMsg.cont.ctrl.sendDataBuf = NULL;
+				}
         hcdMsg.cont.ctrl.device = driver->device;
         hcdMsg.cont.ctrl.completeCb = requestComplete;
         SendMessageToHostControllerDriver(&hcdMsg);
@@ -289,96 +298,97 @@ static void audioClassTask(void)
           bps = (msg.other.audio.bitReso >> 3) * msg.other.audio.numOfChannels;
           if (driver->ep.isochIn.init == 0){
             status = OpenIsochronousEndpoint(msg.devAddr, msg.epNum, msg.other.audio.mps, driver->device->speed, 
-                                            msg.other.audio.fs, bps, (uint32_t*)driver->isochInRaw[0], (uint32_t*)driver->isochInRaw[1], 
-                                            isochronousInComplete);
-            if (status != HCD_OK){
-              CloseIsochronousEndpoint(msg.devAddr, msg.epNum);
-            } else {
-              driver->ep.isochIn.init = 1;
-              repMsg.msgType = HCD_AUDIO_STREAMING_START;
-              repMsg.devAddr = msg.devAddr;
-              repMsg.epNum = msg.epNum;
-              enqueueMsg(&repMsg);
+              msg.other.audio.fs, bps, (uint32_t*)driver->isochInRaw[0], (uint32_t*)driver->isochInRaw[1], 
+              isochronousInComplete);
+              if (status != HCD_OK){
+                CloseIsochronousEndpoint(msg.devAddr, msg.epNum);
+              } else {
+                driver->ep.isochIn.init = 1;
+                repMsg.msgType = HCD_AUDIO_STREAMING_START;
+                repMsg.devAddr = msg.devAddr;
+                repMsg.epNum = msg.epNum;
+                enqueueMsg(&repMsg);
+              }
             }
+          } else {
+            driver->ep.isochOut.bitReso = msg.other.audio.bitReso;
+            driver->ep.isochOut.fs = msg.other.audio.fs;
+            driver->ep.isochOut.mps = msg.other.audio.mps;
+            driver->ep.isochOut.numOfChannels = msg.other.audio.numOfChannels;
+            bps = (msg.other.audio.bitReso >> 3) * msg.other.audio.numOfChannels;
+            if (driver->ep.isochOut.init == 0){
+              status = OpenIsochronousEndpoint(msg.devAddr, msg.epNum, msg.other.audio.mps, driver->device->speed, 
+                msg.other.audio.fs, bps, driver->isochOutBuf[0], driver->isochOutBuf[1], 
+                isochronousOutComplete);
+                if (status != HCD_OK){
+                  CloseIsochronousEndpoint(msg.devAddr, msg.epNum);
+                } else {
+                  driver->ep.isochOut.init = 1;
+                  repMsg.msgType = HCD_AUDIO_STREAMING_START;
+                  repMsg.devAddr = msg.devAddr;
+                  repMsg.epNum = msg.epNum;
+                  enqueueMsg(&repMsg);
+                }
+              }     
+            }
+            break;
           }
-        } else {
-          driver->ep.isochOut.bitReso = msg.other.audio.bitReso;
-          driver->ep.isochOut.fs = msg.other.audio.fs;
-          driver->ep.isochOut.mps = msg.other.audio.mps;
-          driver->ep.isochOut.numOfChannels = msg.other.audio.numOfChannels;
-          bps = (msg.other.audio.bitReso >> 3) * msg.other.audio.numOfChannels;
-          if (driver->ep.isochOut.init == 0){
-            status = OpenIsochronousEndpoint(msg.devAddr, msg.epNum, msg.other.audio.mps, driver->device->speed, 
-                                            msg.other.audio.fs, bps, driver->isochOutBuf[0], driver->isochOutBuf[1], 
-                                            isochronousOutComplete);
-            if (status != HCD_OK){
-              CloseIsochronousEndpoint(msg.devAddr, msg.epNum);
-            } else {
-              driver->ep.isochOut.init = 1;
-              repMsg.msgType = HCD_AUDIO_STREAMING_START;
-              repMsg.devAddr = msg.devAddr;
-              repMsg.epNum = msg.epNum;
-              enqueueMsg(&repMsg);
-            }
-          }     
+          case(HCD_AUDIO_STREAMING_START):{
+            HcdPeriodic_StartIsochronousTransfer(msg.devAddr, msg.epNum);
+            break;
+          }
+          default:
+          break;
         }
-        break;
-      }
-      case(HCD_AUDIO_STREAMING_START):{
-        HcdPeriodic_StartIsochronousTransfer(msg.devAddr, msg.epNum);
-        break;
-      }
-      default:
-        break;
+      }  
     }
-  }  
-}
-
-hcd_Status_t HcdAudio_SendMsg(hcd_Audio_Msg_t* msg)
-{
-  return enqueueMsg(msg);
-}
-
-void HcdAudio_InitUACProtocol(uint8_t revision, hcd_Audio_Protocol_Driver_t* protocol)
-{
-  if (revision == 1){
-    st_UAC10.parseControlInterface = protocol->parseControlInterface;
-    st_UAC10.parseStreamingInterface = protocol->parseStreamingInterface;
-    st_UAC10.requestDoneFromISR = protocol->requestDoneFromISR;
-    st_UAC10.requestDone = protocol->requestDone;
-    st_UAC10.sendInitialRequest = protocol->sendInitialRequest;
-    st_UAC10.setSamplingRate = protocol->setSamplingRate;
-  } else if (revision == 2){
-    st_UAC20.parseControlInterface = protocol->parseControlInterface;
-    st_UAC20.parseStreamingInterface = protocol->parseStreamingInterface;
-    st_UAC20.requestDoneFromISR = protocol->requestDoneFromISR;
-    st_UAC20.requestDone = protocol->requestDone;
-    st_UAC20.sendInitialRequest = protocol->sendInitialRequest;
-    st_UAC20.setSamplingRate = protocol->setSamplingRate;
-  }
-}
-
-void HcdAudio_InitAudioClass(void)
-{
-  hcd_ClassDriver_t comDriver;
-  for (int i = 0; i < NUM_OF_MAX_AUDIO_DEVICE; i++){
-    st_Driver[i].interruptBuf = &st_InterruptBuf[i][0];
-    st_Driver[i].isochInContinuousBuf[0] = &st_IsochInContBuf0[i][0];
-    st_Driver[i].isochInContinuousBuf[1] = &st_IsochInContBuf1[i][0];
-    st_Driver[i].isochInRaw[0] = &st_IsochInRawBuf0[i];
-    st_Driver[i].isochInRaw[1] = &st_IsochInRawBuf1[i];
-    st_Driver[i].isochOutBuf[0] = &st_IsochOutBuf0[i][0];
-    st_Driver[i].isochOutBuf[1] = &st_IsochOutBuf0[i][1];
-  }
-  comDriver.parseInterface = parseInterface;
-  comDriver.parseIAD = parseIAD;
-  comDriver.initClass = initClass;
-  comDriver.terinateClass = terminateClass;
-
-  NVIC_SetPriority(HcdAudio_IRQn, 4);
-  NVIC_SetVector(HcdAudio_IRQn, (uint32_t)audioClassTask);
-  NVIC_EnableIRQ(HcdAudio_IRQn);
-
-  HcdAudioMgr_RegisterAudioDriver(&comDriver);
-
-}
+    
+    hcd_Status_t HcdAudio_SendMsg(hcd_Audio_Msg_t* msg)
+    {
+      return enqueueMsg(msg);
+    }
+    
+    void HcdAudio_InitUACProtocol(uint8_t revision, hcd_Audio_Protocol_Driver_t* protocol)
+    {
+      if (revision == 1){
+        st_UAC10.parseControlInterface = protocol->parseControlInterface;
+        st_UAC10.parseStreamingInterface = protocol->parseStreamingInterface;
+        st_UAC10.requestDoneFromISR = protocol->requestDoneFromISR;
+        st_UAC10.requestDone = protocol->requestDone;
+        st_UAC10.sendInitialRequest = protocol->sendInitialRequest;
+        st_UAC10.setSamplingRate = protocol->setSamplingRate;
+      } else if (revision == 2){
+        st_UAC20.parseControlInterface = protocol->parseControlInterface;
+        st_UAC20.parseStreamingInterface = protocol->parseStreamingInterface;
+        st_UAC20.requestDoneFromISR = protocol->requestDoneFromISR;
+        st_UAC20.requestDone = protocol->requestDone;
+        st_UAC20.sendInitialRequest = protocol->sendInitialRequest;
+        st_UAC20.setSamplingRate = protocol->setSamplingRate;
+      }
+    }
+    
+    void HcdAudio_InitAudioClass(void)
+    {
+      hcd_ClassDriver_t comDriver;
+      for (int i = 0; i < NUM_OF_MAX_AUDIO_DEVICE; i++){
+        st_Driver[i].interruptBuf = &st_InterruptBuf[i][0];
+        st_Driver[i].isochInContinuousBuf[0] = &st_IsochInContBuf0[i][0];
+        st_Driver[i].isochInContinuousBuf[1] = &st_IsochInContBuf1[i][0];
+        st_Driver[i].isochInRaw[0] = &st_IsochInRawBuf0[i];
+        st_Driver[i].isochInRaw[1] = &st_IsochInRawBuf1[i];
+        st_Driver[i].isochOutBuf[0] = &st_IsochOutBuf0[i][0];
+        st_Driver[i].isochOutBuf[1] = &st_IsochOutBuf1[i][0];
+      }
+      comDriver.parseInterface = parseInterface;
+      comDriver.parseIAD = parseIAD;
+      comDriver.initClass = initClass;
+      comDriver.terinateClass = terminateClass;
+      
+      NVIC_SetPriority(HcdAudio_IRQn, 4);
+      NVIC_SetVector(HcdAudio_IRQn, (uint32_t)audioClassTask);
+      NVIC_EnableIRQ(HcdAudio_IRQn);
+      
+      HcdAudioMgr_RegisterAudioDriver(&comDriver);
+      
+    }
+    

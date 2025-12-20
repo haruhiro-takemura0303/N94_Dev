@@ -19,11 +19,13 @@ static hcd_Periodic_QH_Mgr_t st_IntrMgr[HCD_PERIODIC_MAX_NUM_OF_INTR_EP];
 
 static uint32_t st_IntrTxMap;
 static hcd_Periodic_Isoch_Map_t st_IsochMap;
+static uint8_t st_IsochInInitialMap;
+static uint8_t st_IsochOutInitialMap;
 
 static hcd_Periodic_MsgBox_t st_MsgBox;
 
 
-static int getNewIsoch(uint8_t devAddr, uint8_t epNum, hcd_Periodic_Isoch_Mgr_t* mgr)
+static int getNewIsoch(uint8_t devAddr, uint8_t epNum, hcd_Periodic_Isoch_Mgr_t** mgr)
 {
   int ret = -1;
   uint8_t maxSize;
@@ -40,15 +42,15 @@ static int getNewIsoch(uint8_t devAddr, uint8_t epNum, hcd_Periodic_Isoch_Mgr_t*
       mgrArray[i].state = HCD_USED;
       mgrArray[i].devAddr = devAddr;
       mgrArray[i].epNum = epNum;
-      mgr = &mgrArray[i];
+      *mgr = &mgrArray[i];
       ret = i;
       break;
     }
   }
-	return ret;
+  return ret;
 }
 
-static int getIsochMgr(uint8_t devAddr, uint8_t epNum, hcd_Periodic_Isoch_Mgr_t* mgr)
+static int getIsochMgr(uint8_t devAddr, uint8_t epNum, hcd_Periodic_Isoch_Mgr_t** mgr)
 {
   int ret = -1;
   uint8_t maxSize;
@@ -62,12 +64,12 @@ static int getIsochMgr(uint8_t devAddr, uint8_t epNum, hcd_Periodic_Isoch_Mgr_t*
   }
   for (int i = 0; i < maxSize; i++){
     if ((mgrArray[i].state == HCD_USED) && (mgrArray[i].devAddr == devAddr) && (mgrArray[i].epNum == epNum)){
-      mgr = &mgrArray[i];
+      *mgr = &mgrArray[i];
       ret = i;
       break;
     }
   }
-	return ret;
+  return ret;
 }
 
 static int32_t getNewQH(void)
@@ -83,13 +85,13 @@ static int32_t getNewQH(void)
   return ret;
 }
 
-static int32_t getMgr(uint8_t devAddr, uint8_t epNum, hcd_Periodic_QH_Mgr_t* mgr)
+static int32_t getMgr(uint8_t devAddr, uint8_t epNum, hcd_Periodic_QH_Mgr_t** mgr)
 {
   int32_t ret = -1;
   for (int i = 0; i < HCD_PERIODIC_MAX_NUM_OF_INTR_EP; i++){
     if (st_IntrMgr[i].devAddr == devAddr && st_IntrMgr[i].epNum == epNum){
       ret = i;
-      mgr = &st_IntrMgr[i];
+      *mgr = &st_IntrMgr[i];
       break;
     }
   }
@@ -151,7 +153,7 @@ hcd_Status_t OpenIsochronousEndpoint(uint8_t devAddr, uint8_t epNum, uint16_t mp
     return HCD_INVALID_PARAM;
   }
   
-  idx = getNewIsoch(devAddr, epNum, mgr);
+  idx = getNewIsoch(devAddr, epNum, &mgr);
   if (idx < 0){
     EHCI_EnaInt();
     return HCD_FULL;
@@ -288,7 +290,7 @@ hcd_Status_t CloseInterruptEndpoint(uint8_t devAddr, uint8_t epNum)
   
   EHCI_DisInt();
   
-  idx = getMgr(devAddr, epNum, mgr);
+  idx = getMgr(devAddr, epNum, &mgr);
   if (idx < 0){
     EHCI_EnaInt();
     return HCD_NULL;
@@ -319,7 +321,7 @@ hcd_Status_t CloseIsochronousEndpoint(uint8_t devAddr, uint8_t epNum)
   
   EHCI_DisInt();
   
-  idx = getIsochMgr(devAddr, epNum, mgr);
+  idx = getIsochMgr(devAddr, epNum, &mgr);
   if (idx < 0){
     EHCI_EnaInt();
     return HCD_NULL;
@@ -349,7 +351,7 @@ static uint16_t refillIsochronousTD(uint8_t devAddr, uint8_t epNum, uint8_t bufI
   uint16_t samCount = 0;
   hcd_Periodic_Isoch_Mgr_t* mgr;
   
-  idx = getIsochMgr(devAddr, epNum, mgr);
+  idx = getIsochMgr(devAddr, epNum, &mgr);
   if (idx < 0){
     return HCD_FULL;
   }
@@ -386,8 +388,21 @@ static uint16_t refillIsochronousTD(uint8_t devAddr, uint8_t epNum, uint8_t bufI
 static hcd_Status_t startIsochronous(uint8_t devAddr, uint8_t epNum)
 {
   EHCI_DisInt();
+  int32_t idx = -1;
+  hcd_Periodic_Isoch_Mgr_t* mgr;
+  
+  idx = getIsochMgr(devAddr, epNum, &mgr);
+  if (idx < 0){
+    return -1;
+  }
+  if (epNum & 0x80){
+    st_IsochInInitialMap |= (1 << idx);
+  } else {
+    st_IsochOutInitialMap |= (1 << idx);
+  }
   refillIsochronousTD(devAddr, epNum, 0);
   refillIsochronousTD(devAddr, epNum, 1);
+  
   EHCI_EnaInt();
   
   return HCD_OK;
@@ -400,7 +415,7 @@ static hcd_Status_t startInterrupt(uint8_t devAddr, uint8_t epNum, uint16_t txLe
   ehci_qTD_t* qTD;
   hcd_Periodic_QH_Mgr_t* mgr;
   
-  idx = getMgr(devAddr, epNum, mgr);
+  idx = getMgr(devAddr, epNum, &mgr);
   if (idx < 0){
     return -1;
   }
@@ -458,6 +473,58 @@ static void usbIntIsochronous(void)
   uint32_t extendedMap;
   
   nextMap.whole = 0;
+  
+  if (st_IsochInInitialMap){
+    extendedMap = st_IsochInInitialMap;
+    while(extendedMap){
+      idx = 31 - __CLZ((uint32_t)(extendedMap));
+      if (!(st_In_iTD[idx].doubleBuf[0].iTD[HCD_PERIODIC_iTD_SINGLE_BUF - 1].TSCx[MAX_iTD_TSC - 1] & EHCI_iTD_TSCx_Status_Active)){
+        mgr = &st_IsochInMgr[idx];
+        for (int i = 0; i < HCD_PERIODIC_iTD_SINGLE_BUF; i++){
+          for (int j = 0; j < MAX_iTD_TSC; j++){
+            mgr->inParam.dataBuf[0].frame[i].mFrame[j] = mgr->inParam.bytePerESIT - iTD_TRANSFER_LENGTH_from_TSCx(st_In_iTD[idx].doubleBuf[0].iTD[i].TSCx[j]);
+          }
+        }
+        refillIsochronousTD(mgr->devAddr, mgr->epNum, 0);
+        mgr->completeCallback(mgr->devAddr, mgr->epNum, 0, mgr->buf[0], &mgr->inParam.dataBuf[0]);
+        nextMap.ep.isochIn[1] |= (1 << idx);
+        st_IsochInInitialMap &= ~(1 << idx);
+      } else if (!(st_In_iTD[idx].doubleBuf[1].iTD[HCD_PERIODIC_iTD_SINGLE_BUF - 1].TSCx[MAX_iTD_TSC - 1] & EHCI_iTD_TSCx_Status_Active)){
+        mgr = &st_IsochInMgr[idx];
+        for (int i = 0; i < HCD_PERIODIC_iTD_SINGLE_BUF; i++){
+          for (int j = 0; j < MAX_iTD_TSC; j++){
+            mgr->inParam.dataBuf[1].frame[i].mFrame[j] = mgr->inParam.bytePerESIT - iTD_TRANSFER_LENGTH_from_TSCx(st_In_iTD[idx].doubleBuf[1].iTD[i].TSCx[j]);
+          }
+        }
+        refillIsochronousTD(mgr->devAddr, mgr->epNum, 1);
+        mgr->completeCallback(mgr->devAddr, mgr->epNum, 0, mgr->buf[1], &mgr->inParam.dataBuf[1]);
+        nextMap.ep.isochIn[0] |= (1 << idx);
+        st_IsochInInitialMap &= ~(1 << idx);
+      }
+      extendedMap &= ~(1 << idx);
+    }
+  }
+  
+  if (st_IsochOutInitialMap){
+    extendedMap = st_IsochOutInitialMap;
+    while(extendedMap){
+      idx = 31 - __CLZ((uint32_t)(extendedMap));
+      if (!(st_Out_iTD[idx].doubleBuf[0].iTD[HCD_PERIODIC_iTD_SINGLE_BUF - 1].TSCx[MAX_iTD_TSC - 1] & EHCI_iTD_TSCx_Status_Active)){
+        mgr = &st_IsochOutMgr[idx];
+        nextLen = refillIsochronousTD(mgr->devAddr, mgr->epNum, 0);
+        mgr->completeCallback(mgr->devAddr, mgr->epNum, nextLen, mgr->buf[0], NULL);
+        nextMap.ep.isochOut[1] |= (1 << idx);
+        st_IsochOutInitialMap &= ~(1 << idx);
+      } else if (!(st_Out_iTD[idx].doubleBuf[1].iTD[HCD_PERIODIC_iTD_SINGLE_BUF - 1].TSCx[MAX_iTD_TSC - 1] & EHCI_iTD_TSCx_Status_Active)){
+        mgr = &st_IsochOutMgr[idx];
+        nextLen = refillIsochronousTD(mgr->devAddr, mgr->epNum, 1);
+        mgr->completeCallback(mgr->devAddr, mgr->epNum, nextLen, mgr->buf[1], NULL);
+        nextMap.ep.isochOut[0] |= (1 << idx);
+        st_IsochOutInitialMap &= ~(1 << idx);
+      }
+      extendedMap &= ~(1 << idx);
+    }
+  }
   
   if (st_IsochMap.whole){
     curMap.whole = st_IsochMap.whole;
@@ -531,8 +598,9 @@ static void usbIntIsochronous(void)
         extendedMap &= ~(1 << idx);
       }
     }
-    st_IsochMap.whole = nextMap.whole;
   }
+  
+  st_IsochMap.whole = nextMap.whole;
 }
 
 static void usbIntHandler(void)
@@ -603,7 +671,7 @@ void InitPeriodicSchedule(void)
   NVIC_SetVector(HcdPeriodic_IRQn, (uint32_t)periodicMainTask);
   NVIC_SetPriority(HcdPeriodic_IRQn, 4);
   NVIC_EnableIRQ(HcdPeriodic_IRQn);
-    
+  
   for (int i = 0; i < HCD_PERIODIC_PFL_SIZE; i++){
     st_PeriodicFrameList[i] = (uint32_t)(&st_Out_iTD[0].doubleBuf[(i >> 2)].iTD[(i & 0x3)].DWORD0_NLP) | EHCI_PFL_TYP_iTD;
     st_Out_iTD[HCD_PERIODIC_MAX_NUM_OF_ISOCHOUT_EP - 1].doubleBuf[(i >> 2)].iTD[(i & 0x3)].DWORD0_NLP = (uint32_t)(&st_In_iTD[0].doubleBuf[(i >> 2)].iTD[(i & 0x3)].DWORD0_NLP) | EHCI_PFL_TYP_iTD;

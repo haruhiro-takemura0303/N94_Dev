@@ -18,7 +18,7 @@ static uint16_t parseInterface(config_rawdesc_t *confRaw, hcd_DeviceInfo_t* devi
   UAC_SubClass_t bIntfSub;
   usbDesc_Interface_t* descPtr;
   
-  devIdx = device->devAddr;
+  devIdx = device->devAddr - 1;
   
   descPtr = (usbDesc_Interface_t*)(&confRaw->rawDesc[confRaw->readPtr]);
   if (descPtr->bInterfaceClass != USB_CLASSCODE_AUDIO){
@@ -104,7 +104,7 @@ static uint16_t parseIAD(config_rawdesc_t *confRaw, hcd_DeviceInfo_t* device)
   uint16_t rtnReadBytes = 0;
   uint8_t devIdx;
   
-  devIdx = device->devAddr;
+  devIdx = device->devAddr - 1;
 
   if (!st_AudioDist[devIdx].clsDist.existAudio){
     st_AudioDist[devIdx].clsDist.existAudio = 1;

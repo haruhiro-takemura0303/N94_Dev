@@ -15,7 +15,7 @@ static config_rawdesc_t st_ConfigRawDesc[MAX_DEVICE_NUM];
 static string_info_t st_StringInfo[MAX_DEVICE_NUM];
 static usb_EnumState_t st_EnumState[MAX_DEVICE_NUM];
 
-static hcd_MsgBox_t st_MsgBox;
+static hcd_MsgBox_t st_HcdMsgBox;
 static hcd_MsgBox_t st_CtrlPendBox;
 static hcd_MsgBox_t st_GpTimerPendBox;
 
@@ -35,6 +35,7 @@ static struct{
 }st_CsControlTable[MAX_DEVICE_NUM];
 
 static void cscCb_StableConnectionDetect(void);
+static void pedCb_StartEnum(void);
 
 static int32_t enqueueMsg(hcd_MsgBox_t* box, hcd_Msg_t* msg)
 {
@@ -64,7 +65,7 @@ static int32_t dequeueMsg(hcd_MsgBox_t* box, hcd_Msg_t* msg)
   if (box->deqPtr != box->enqPtr){
     memcpy(msg, &box->msg[box->deqPtr], sizeof(hcd_Msg_t));
     box->deqPtr++;
-    if (box->deqPtr == HCD_ASYNC_MSGBOX_SIZE){
+    if (box->deqPtr == HCD_MSGBOX_SIZE){
       box->deqPtr = 0;
     }
     ret = 0;
@@ -84,14 +85,20 @@ static void initGpTimer(void)
 static void gpTimerIntCb_gpTimerComplete(void)
 {
   hcd_Msg_t msg;
+	
+	EHCI->GPTIMER0CTRL &= ~USBHS_GPTIMER0CTL_RUN_MASK;
   msg.cont.gp_timer.count_us = GPTIMER_COMPLETE;
-  enqueueMsg(&st_MsgBox, &msg);
+	msg.cont.gp_timer.completeCb = NULL;
+  enqueueMsg(&st_HcdMsgBox, &msg);
 }
 
 static void gpTimerCb_NegatePortReset(uint8_t miscVal)
 {
   EHCI->PORTSC1 &= ~USBHS_PORTSC1_PR_MASK;
   while (EHCI->PORTSC1 & USBHS_PORTSC1_PR_MASK);
+	if (EHCI->PORTSC1 & USBHS_PORTSC1_PE_MASK){
+		pedCb_StartEnum();
+	}
 }
 
 static void ehciResetSequence(void)
@@ -103,7 +110,7 @@ static void ehciResetSequence(void)
     msg.cont.gp_timer.completeCb = gpTimerCb_NegatePortReset;
     msg.cont.gp_timer.miscVal = 0;
     msg.cont.gp_timer.count_us = 50*1000; //50ms
-    enqueueMsg(&st_MsgBox, &msg);
+    enqueueMsg(&st_HcdMsgBox, &msg);
   }
 }
 
@@ -125,7 +132,7 @@ static void cscCb_StableConnectionDetect(void)
   msg.cont.gp_timer.completeCb = gpTimerCb_IsConnectStable;
   msg.cont.gp_timer.miscVal = 0;
   msg.cont.gp_timer.count_us = 30*1000; //De-bounce Time:30ms
-  enqueueMsg(&st_MsgBox, &msg);
+  enqueueMsg(&st_HcdMsgBox, &msg);
 }
 
 static void gpTimerCb_InitRhDevice(uint8_t miscVal)
@@ -137,13 +144,13 @@ static void gpTimerCb_InitRhDevice(uint8_t miscVal)
   msg.cont.init_device.hubPort = 0;
   if ((EHCI->PORTSC1 & USBHS_PORTSC1_PSPD_MASK) == USBHS_PORTSC1_PSPD(0b10)){
     msg.cont.init_device.psiv = DEV_SPEED_HIGH;
-    enqueueMsg(&st_MsgBox, &msg);
+    enqueueMsg(&st_HcdMsgBox, &msg);
   } else if ((EHCI->PORTSC1 & USBHS_PORTSC1_PSPD_MASK) == USBHS_PORTSC1_PSPD(0b00)){
     msg.cont.init_device.psiv = DEV_SPEED_FULL;
-    enqueueMsg(&st_MsgBox, &msg);
+    enqueueMsg(&st_HcdMsgBox, &msg);
   } else if ((EHCI->PORTSC1 & USBHS_PORTSC1_PSPD_MASK) == USBHS_PORTSC1_PSPD(0b01)){
     msg.cont.init_device.psiv = DEV_SPEED_LOW;
-    enqueueMsg(&st_MsgBox, &msg);
+    enqueueMsg(&st_HcdMsgBox, &msg);
   } else {
     /*Detach Sequence*/
   }
@@ -157,7 +164,7 @@ static void pedCb_StartEnum(void)
     msg.cont.gp_timer.completeCb = gpTimerCb_InitRhDevice;
     msg.cont.gp_timer.miscVal = 0;
     msg.cont.gp_timer.count_us = 30*1000;
-    enqueueMsg(&st_MsgBox, &msg);
+    enqueueMsg(&st_HcdMsgBox, &msg);
   }
 }
 
@@ -218,15 +225,16 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       ep0Mps = bMaxPacketSize0;
       HcdAsync_SetEp0Mps(devAddr, ep0Mps);
       MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_ADDRESS, devIdx + 1, 0, 0, &msg.cont.ctrl.setup);
-      enqueueMsg(&st_MsgBox, &msg);
+      enqueueMsg(&st_HcdMsgBox, &msg);
       break;
     }
     case (GOT_DESCRIPTOR_DEV):{
       /*SET_ADDRESS completed*/
+			st_EnumState[devIdx] = ADDRESSED;
       device->devAddr = devIdx + 1;
       HcdAsync_SetAddress(devIdx + 1);
       MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_DEVICE << 8 | 0), 0, 0x12, &msg.cont.ctrl.setup);
-      enqueueMsg(&st_MsgBox, &msg);
+      enqueueMsg(&st_HcdMsgBox, &msg);
       break;
     }
     case (ADDRESSED):{
@@ -237,7 +245,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       st_StringInfo[devIdx].venderStrID = st_DeviceDescriptorContainer[devIdx].desc.iManufacturer;
       st_StringInfo[devIdx].productStrID = st_DeviceDescriptorContainer[devIdx].desc.iProduct;
       MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_CONFIG << 8 | 0), 0, 4, &msg.cont.ctrl.setup);
-      enqueueMsg(&st_MsgBox, &msg);
+      enqueueMsg(&st_HcdMsgBox, &msg);
       break;
     }
     case (GOT_DESCRIPTOR_DEV_RE):{
@@ -246,7 +254,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       uint16_t cfgLen = (st_Ep0DatBuf[devIdx].buf[2] >> 16);
       st_ConfigRawDesc[devIdx].fullLength = cfgLen;
       MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_CONFIG << 8 | 0), 0, cfgLen, &msg.cont.ctrl.setup);
-      enqueueMsg(&st_MsgBox, &msg);
+      enqueueMsg(&st_HcdMsgBox, &msg);
       break;
     }
     case (GOT_DESCRIPTOR_CFG_INI):{
@@ -255,7 +263,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       st_EnumState[devIdx] = GOT_DESCRIPTOR_CFG;
       memcpy(&st_ConfigRawDesc[devIdx].rawDesc[0], &st_Ep0DatBuf[devIdx].buf[2], st_ConfigRawDesc[devIdx].fullLength);
       parseMsg.cont.parse_config.device = device;
-      enqueueMsg(&st_MsgBox, &parseMsg);
+      enqueueMsg(&st_HcdMsgBox, &parseMsg);
       break;
     }
     case (GOT_DESCRIPTOR_CFG):{
@@ -268,7 +276,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
         st_EnumState[devIdx] = GOT_DESCRIPTOR_LANG_STR_VENDOR_SKIP;
         MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_STRING << 8 | st_StringInfo[devIdx].productStrID), st_StringInfo[devIdx].langID, 0xFF, &msg.cont.ctrl.setup);
       }
-      enqueueMsg(&st_MsgBox, &msg);
+      enqueueMsg(&st_HcdMsgBox, &msg);
       break;
     }
     case (GOT_DESCRIPTOR_LANG):{
@@ -286,7 +294,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
         uint8_t configNum = st_ConfigDescriptorContainer[devIdx].desc.bConfigurationValue;
         MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_CONFIGURATION, configNum, 0, 0, &msg.cont.ctrl.setup);
       }
-      enqueueMsg(&st_MsgBox, &msg);
+      enqueueMsg(&st_HcdMsgBox, &msg);
       break;
     }
     case (GOT_DESCRIPTOR_LANG_STR_VENDOR_SKIP):
@@ -300,7 +308,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       }
       uint8_t configNum = st_ConfigDescriptorContainer[devIdx].desc.bConfigurationValue;
       MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_CONFIGURATION, configNum, 0, 0, &msg.cont.ctrl.setup);
-      enqueueMsg(&st_MsgBox, &msg);
+      enqueueMsg(&st_HcdMsgBox, &msg);
       break;
     }
     case (GOT_DESCRIPTOR_STR_PROD):
@@ -309,7 +317,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       st_EnumState[devIdx] = CONFIGURED;
       clsMsg.type = HCDMSG_INIT_CLASS;
       clsMsg.cont.init_class.device = &st_DeviceInfo[devIdx];
-      enqueueMsg(&st_MsgBox, &clsMsg);
+      enqueueMsg(&st_HcdMsgBox, &clsMsg);
       break;
     }
     case (CONFIGURED):{
@@ -320,7 +328,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
         }
         stat = dequeueMsg(&st_CtrlPendBox, &pendMsg);
         if (stat == 0){
-          enqueueMsg(&st_MsgBox, &pendMsg);
+          enqueueMsg(&st_HcdMsgBox, &pendMsg);
         }
       }
       break;
@@ -338,7 +346,7 @@ static void hcdMainTask(void)
   uint32_t u32Len;
   NVIC_ClearPendingIRQ(HCD_IRQn);
   for(;;){
-    status = dequeueMsg(&st_MsgBox, &msg);
+    status = dequeueMsg(&st_HcdMsgBox, &msg);
     if (status != 0){
       break;
     }
@@ -356,6 +364,7 @@ static void hcdMainTask(void)
           }
           if ((st_EnumState[devIdx] == CONFIGURED) && (msg.cont.ctrl.completeCb)){
             st_CsControlTable[devIdx].completeCb = msg.cont.ctrl.completeCb;
+						st_CsControlTable[devIdx].busyFlg = 1;
           }
           HcdAsync_StartTransfer(msg.cont.ctrl.device->devAddr, 0, 0);
         } else {
@@ -377,7 +386,7 @@ static void hcdMainTask(void)
             uint8_t configNum = st_ConfigDescriptorContainer[devIdx].desc.bConfigurationValue;
             MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_CONFIGURATION, configNum, 0, 0, &repMsg.cont.ctrl.setup);
           }
-          enqueueMsg(&st_MsgBox, &repMsg);
+          enqueueMsg(&st_HcdMsgBox, &repMsg);
         }
         break;
       }
@@ -415,6 +424,7 @@ static void hcdMainTask(void)
             st_DeviceInfo[i].deviceDesc = &st_DeviceDescriptorContainer[i];
             devIdx = i;
             st_EnumState[i] = ATTACHED;
+						break;
           }
         }
         if (devIdx != 0xFF){
@@ -427,7 +437,7 @@ static void hcdMainTask(void)
             repMsg.cont.ctrl.device = &st_DeviceInfo[devIdx];
             repMsg.cont.ctrl.sendDataBuf = NULL;
             MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_DEVICE << 8 | 0), 0, 8, &repMsg.cont.ctrl.setup);
-            enqueueMsg(&st_MsgBox, &repMsg);
+            enqueueMsg(&st_HcdMsgBox, &repMsg);
           }
         }
         break;
@@ -449,17 +459,23 @@ void InitEHCI(void)
   HcdClass_InitClassDrivers();
 
   EHCI_SetCallback(PORT_CSC, cscCb_StableConnectionDetect);
-  EHCI_SetCallback(PORT_PED, pedCb_StartEnum);
+  //EHCI_SetCallback(PORT_PED, pedCb_StartEnum);
+	EHCI_SetCallback(GPTIMER0, gpTimerIntCb_gpTimerComplete);
+	
+	UsbPhy_HighSpeedInit();
+	
   initGpTimer();
   //NVIC_SetPriority(EHCI_Detach_VDIn, 2);
   //NVIC_EnableIRQ(EHCI_Detach_VDIn);
   NVIC_SetVector(HCD_IRQn, (uint32_t)hcdMainTask);
   NVIC_SetPriority(HCD_IRQn, 4);
   NVIC_EnableIRQ(HCD_IRQn);
+	EHCI_SysInit();
   InitAsyncSchedule();
   InitPeriodicSchedule();
-  
-  EHCI_SysInit();
+	  /*Port Start*/
+  EHCI->PORTSC1 |= USBHS_PORTSC1_PP_MASK;
+
 }
 
 void MakeSETUPPacket(uint8_t dir, uint8_t typ, uint8_t attr, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, usb_SetupPacket_t* setup)
@@ -471,5 +487,5 @@ void MakeSETUPPacket(uint8_t dir, uint8_t typ, uint8_t attr, uint8_t bRequest, u
 
 int32_t SendMessageToHostControllerDriver(hcd_Msg_t* msg)
 {
-  return enqueueMsg(&st_MsgBox, msg);
+  return enqueueMsg(&st_HcdMsgBox, msg);
 }
