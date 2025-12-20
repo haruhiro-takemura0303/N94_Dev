@@ -96,7 +96,7 @@ static inline uint32_t U32FromU16x2(uint16_t ms2b, uint16_t ls2b){
 }
 
 void InitEHCI(void);
-void MakeSETUPPacket(uint8_t dir, uint8_t typ, uint8_t attr, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, uint32_t* setup);
+void MakeSETUPPacket(uint8_t dir, uint8_t typ, uint8_t attr, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, usb_SetupPacket_t* setup);
 int32_t SendMessageToHostControllerDriver(hcd_Msg_t* msg);
 
 #endif /*__HCD_H__*/

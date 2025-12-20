@@ -25,7 +25,8 @@ typedef struct{
 }hcd_ClassMgr_t;
 
 hcd_Status_t ParseConfigurationDescriptor(hcd_DeviceInfo_t* device, config_rawdesc_t* confRaw, usbDesc_Config_t* configDesc);
-hcd_Status_t InitClassDriver(hcd_DeviceInfo_t* device);
+hcd_Status_t StartClassDriver(hcd_DeviceInfo_t* device);
 hcd_Status_t RegisterClassDriver(hcd_ClassDriver_t* map, uint8_t clsCode);
+void HcdClass_InitClassDrivers(void);
 
 #endif /*__HCD_CLASS_H__*/

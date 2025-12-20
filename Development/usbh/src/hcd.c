@@ -217,7 +217,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       uint8_t bMaxPacketSize0 = ((st_Ep0DatBuf[devIdx].buf[3] & 0xFF000000) >> 24);
       ep0Mps = bMaxPacketSize0;
       HcdAsync_SetEp0Mps(devAddr, ep0Mps);
-      MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_ADDRESS, devIdx + 1, 0, 0, &msg.cont.ctrl.setup.DWORD[0]);
+      MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_ADDRESS, devIdx + 1, 0, 0, &msg.cont.ctrl.setup);
       enqueueMsg(&st_MsgBox, &msg);
       break;
     }
@@ -225,7 +225,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       /*SET_ADDRESS completed*/
       device->devAddr = devIdx + 1;
       HcdAsync_SetAddress(devIdx + 1);
-      MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_DEVICE << 8 | 0), 0, 0x12, &msg.cont.ctrl.setup.DWORD[0]);
+      MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_DEVICE << 8 | 0), 0, 0x12, &msg.cont.ctrl.setup);
       enqueueMsg(&st_MsgBox, &msg);
       break;
     }
@@ -236,7 +236,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       memcpy(&st_DeviceDescriptorContainer[devIdx], &st_Ep0DatBuf[devIdx].buf[2], 0x12);
       st_StringInfo[devIdx].venderStrID = st_DeviceDescriptorContainer[devIdx].desc.iManufacturer;
       st_StringInfo[devIdx].productStrID = st_DeviceDescriptorContainer[devIdx].desc.iProduct;
-      MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_CONFIG << 8 | 0), 0, 4, &msg.cont.ctrl.setup.DWORD[0]);
+      MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_CONFIG << 8 | 0), 0, 4, &msg.cont.ctrl.setup);
       enqueueMsg(&st_MsgBox, &msg);
       break;
     }
@@ -245,7 +245,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       st_EnumState[devIdx] = GOT_DESCRIPTOR_CFG_INI;
       uint16_t cfgLen = (st_Ep0DatBuf[devIdx].buf[2] >> 16);
       st_ConfigRawDesc[devIdx].fullLength = cfgLen;
-      MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_CONFIG << 8 | 0), 0, cfgLen, &msg.cont.ctrl.setup.DWORD[0]);
+      MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_CONFIG << 8 | 0), 0, cfgLen, &msg.cont.ctrl.setup);
       enqueueMsg(&st_MsgBox, &msg);
       break;
     }
@@ -263,10 +263,10 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       st_StringInfo[devIdx].langID = (uint16_t)(st_Ep0DatBuf[devIdx].buf[2] >> 16);
       if (st_StringInfo[devIdx].venderStrID){
         st_EnumState[devIdx] = GOT_DESCRIPTOR_LANG;
-        MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_STRING << 8 | st_StringInfo[devIdx].venderStrID), st_StringInfo[devIdx].langID, 0xFF, &msg.cont.ctrl.setup.DWORD[0]);
+        MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_STRING << 8 | st_StringInfo[devIdx].venderStrID), st_StringInfo[devIdx].langID, 0xFF, &msg.cont.ctrl.setup);
       } else{
         st_EnumState[devIdx] = GOT_DESCRIPTOR_LANG_STR_VENDOR_SKIP;
-        MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_STRING << 8 | st_StringInfo[devIdx].productStrID), st_StringInfo[devIdx].langID, 0xFF, &msg.cont.ctrl.setup.DWORD[0]);
+        MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_STRING << 8 | st_StringInfo[devIdx].productStrID), st_StringInfo[devIdx].langID, 0xFF, &msg.cont.ctrl.setup);
       }
       enqueueMsg(&st_MsgBox, &msg);
       break;
@@ -280,11 +280,11 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
         st_StringInfo[devIdx].venderStr[i] = rdPtr[2 * i];
       }
       if (st_StringInfo[devIdx].productStrID){
-        MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_STRING << 8 | st_StringInfo[devIdx].productStrID), st_StringInfo[devIdx].langID, 0xFF, &msg.cont.ctrl.setup.DWORD[0]);
+        MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_STRING << 8 | st_StringInfo[devIdx].productStrID), st_StringInfo[devIdx].langID, 0xFF, &msg.cont.ctrl.setup);
       }else{
         st_EnumState[devIdx] = GET_DESCRIPTOR_STR_SKIPPED;
         uint8_t configNum = st_ConfigDescriptorContainer[devIdx].desc.bConfigurationValue;
-        MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_CONFIGURATION, configNum, 0, 0, &msg.cont.ctrl.setup.DWORD[0]);
+        MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_CONFIGURATION, configNum, 0, 0, &msg.cont.ctrl.setup);
       }
       enqueueMsg(&st_MsgBox, &msg);
       break;
@@ -299,7 +299,7 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
         st_StringInfo[devIdx].productStr[i] = rdPtr[2 * i];
       }
       uint8_t configNum = st_ConfigDescriptorContainer[devIdx].desc.bConfigurationValue;
-      MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_CONFIGURATION, configNum, 0, 0, &msg.cont.ctrl.setup.DWORD[0]);
+      MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_CONFIGURATION, configNum, 0, 0, &msg.cont.ctrl.setup);
       enqueueMsg(&st_MsgBox, &msg);
       break;
     }
@@ -372,10 +372,10 @@ static void hcdMainTask(void)
           repMsg.cont.ctrl.sendDataBuf = NULL;
           repMsg.cont.ctrl.device = msg.cont.parse_config.device;
           if ((msg.cont.ctrl.device->deviceDesc->desc.iManufacturer != 0) || (msg.cont.ctrl.device->deviceDesc->desc.iProduct != 0)){
-            MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_STRING << 8 | 0), 0, 4, &repMsg.cont.ctrl.setup.DWORD[0]);
+            MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_STRING << 8 | 0), 0, 4, &repMsg.cont.ctrl.setup);
           } else {
             uint8_t configNum = st_ConfigDescriptorContainer[devIdx].desc.bConfigurationValue;
-            MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_CONFIGURATION, configNum, 0, 0, &repMsg.cont.ctrl.setup.DWORD[0]);
+            MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_SET_CONFIGURATION, configNum, 0, 0, &repMsg.cont.ctrl.setup);
           }
           enqueueMsg(&st_MsgBox, &repMsg);
         }
@@ -426,14 +426,14 @@ static void hcdMainTask(void)
             repMsg.cont.ctrl.completeCb = NULL;
             repMsg.cont.ctrl.device = &st_DeviceInfo[devIdx];
             repMsg.cont.ctrl.sendDataBuf = NULL;
-            MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_DEVICE << 8 | 0), 0, 8, &repMsg.cont.ctrl.setup.DWORD[0]);
+            MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_DEVICE << 8 | 0), 0, 8, &repMsg.cont.ctrl.setup);
             enqueueMsg(&st_MsgBox, &repMsg);
           }
         }
         break;
       }
       case(HCDMSG_INIT_CLASS):{
-        //InitClassDriver(msg.cont.init_class.device);
+        StartClassDriver(msg.cont.init_class.device);
         break;
       }
       default:
@@ -446,6 +446,8 @@ static void hcdMainTask(void)
 
 void InitEHCI(void)
 {
+  HcdClass_InitClassDrivers();
+
   EHCI_SetCallback(PORT_CSC, cscCb_StableConnectionDetect);
   EHCI_SetCallback(PORT_PED, pedCb_StartEnum);
   initGpTimer();
@@ -460,11 +462,11 @@ void InitEHCI(void)
   EHCI_SysInit();
 }
 
-void MakeSETUPPacket(uint8_t dir, uint8_t typ, uint8_t attr, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, uint32_t* setup)
+void MakeSETUPPacket(uint8_t dir, uint8_t typ, uint8_t attr, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, usb_SetupPacket_t* setup)
 {
   uint8_t bmRequestType = (dir << 7 | typ << 5 | attr);
-  setup[0] = ((uint32_t)wValue << 16 | (uint32_t)bRequest << 8 | bmRequestType);
-  setup[1] = ((uint32_t)wLength << 16 | (uint32_t)wIndex);
+  setup->DWORD[0] = ((uint32_t)wValue << 16 | (uint32_t)bRequest << 8 | bmRequestType);
+  setup->DWORD[1] = ((uint32_t)wLength << 16 | (uint32_t)wIndex);
 }
 
 int32_t SendMessageToHostControllerDriver(hcd_Msg_t* msg)

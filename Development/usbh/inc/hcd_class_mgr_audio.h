@@ -25,6 +25,6 @@ typedef struct{
 
 hcd_Status_t HcdAudioMgr_RegisterAudioDriver(hcd_ClassDriver_t* map);
 hcd_Status_t HcdAudioMgr_RegisterMidiDriver(hcd_ClassDriver_t* map);
-
+hcd_Status_t HcdAudioMgr_InitUAC(void);
 
 #endif /*__HCD_CLASS_MGR_AUDIO_H__*/

@@ -307,5 +307,6 @@ typedef struct{
   hcd_UAC20_StreamIf_t streamIn;
 } hcd_UAC20_Info_t;
 
+void HcdUAC20_InitUAC20(void);
 
 #endif /*__HCD_CLASS_AUDIO_20_H__*/

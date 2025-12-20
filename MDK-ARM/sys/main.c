@@ -40,7 +40,7 @@ int main (void)
 	LED_GREEN_OFF();
 
 	/*USB Device*/
-	InitDualVcom();
+	//InitDualVcom();
 	
 	/*USB Host(Enhanced Host Controller Interface)*/
 	InitEHCI();

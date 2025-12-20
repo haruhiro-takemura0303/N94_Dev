@@ -27,7 +27,7 @@ static hcd_Audio_Transfer_Driver_t* getDriver(uint8_t devAddr)
 {
   hcd_Audio_Transfer_Driver_t* ret = NULL;
   for (int i = 0; i < st_NumOfAudioDevice; i++){
-    if (st_Driver[i].device->devAddr = devAddr){
+    if (st_Driver[i].device->devAddr == devAddr){
       ret = &st_Driver[i];
       break;
     }
@@ -114,6 +114,7 @@ static uint16_t parseInterface(config_rawdesc_t *confRaw, hcd_DeviceInfo_t* devi
   switch(bIntfSub){
     case(UAC_CONTROL): rtnReadBytes = protocol->parseControlInterface(confRaw, &driver->ep.interrupt, device); break;
     case(UAC_STREAMING): rtnReadBytes = protocol->parseStreamingInterface(confRaw, &driver->ep.isochOut, &driver->ep.isochIn, device); break;
+		default: break;
   }
 
   return rtnReadBytes;
@@ -338,7 +339,7 @@ hcd_Status_t HcdAudio_SendMsg(hcd_Audio_Msg_t* msg)
   return enqueueMsg(msg);
 }
 
-void InitUACProtocol(uint8_t revision, hcd_Audio_Protocol_Driver_t* protocol)
+void HcdAudio_InitUACProtocol(uint8_t revision, hcd_Audio_Protocol_Driver_t* protocol)
 {
   if (revision == 1){
     st_UAC10.parseControlInterface = protocol->parseControlInterface;
@@ -357,7 +358,7 @@ void InitUACProtocol(uint8_t revision, hcd_Audio_Protocol_Driver_t* protocol)
   }
 }
 
-void InitAudioClass(void)
+void HcdAudio_InitAudioClass(void)
 {
   hcd_ClassDriver_t comDriver;
   for (int i = 0; i < NUM_OF_MAX_AUDIO_DEVICE; i++){

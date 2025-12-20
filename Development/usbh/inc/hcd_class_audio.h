@@ -132,8 +132,8 @@ typedef struct{
   void (*requestDone)(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1);
 }hcd_Audio_Protocol_Driver_t;
 
-void InitAudioClass(void);
-void InitUACProtocol(uint8_t revision, hcd_Audio_Protocol_Driver_t* protocol);
+void HcdAudio_InitAudioClass(void);
+void HcdAudio_InitUACProtocol(uint8_t revision, hcd_Audio_Protocol_Driver_t* protocol);
 hcd_Status_t HcdAudio_SendMsg(hcd_Audio_Msg_t* msg);
 
 

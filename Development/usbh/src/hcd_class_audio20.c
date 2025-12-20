@@ -361,6 +361,7 @@ static hcd_Status_t createRequest(usb_SetupPacket_t* setup, uint32_t data0, uint
   return HCD_OK;
 }
 
+
 static hcd_Status_t sendInitialRequest(hcd_DeviceInfo_t* device)
 {
   hcd_UAC20_Info_t* info;
@@ -373,6 +374,14 @@ static hcd_Status_t sendInitialRequest(hcd_DeviceInfo_t* device)
   if (!info){
     return HCD_NULL;
   }
+
+  if (info->streamOut.altSet[0].intfPtr){
+    info->streamOut.curAltSet = &info->streamOut.altSet[0];
+  }
+  if (info->streamIn.altSet[0].intfPtr){
+    info->streamIn.curAltSet = &info->streamIn.altSet[0];
+  }
+
   
   intfNum = info->control.intfPtr->bInterfaceNumber;
   
@@ -405,6 +414,109 @@ static void initialRequestDone(void)
   HcdAudio_SendMsg(&msg);
 }
 
+static hcd_UAC20_ClockSrcInfo_t* getClockInfo(hcd_UAC20_Info_t* info, uint8_t clkID)
+{
+  hcd_UAC20_ClockSrcInfo_t* ret = NULL;
+  if (info->control.entity[clkID].type == CLOCK_SOURCE){
+    for (int i = 0; i < info->control.clock.numOfClockSrc; i++){
+      if (info->control.clock.clockSrc[i].clockID == clkID){
+        ret = &info->control.clock.clockSrc[i];
+        break;
+      }
+    }
+  }
+  return ret;
+}
+
+static uint8_t getClockIdFromStreamAltSet(hcd_UAC20_Info_t* info, hcd_UAC20_AltSet_t* altset)
+{
+  uint8_t termID, clkID;
+  termID = altset->strmIfPtr->bTerminalLink;
+  clkID = info->control.entity[termID].cSourceID;
+  return clkID;
+}
+static hcd_Status_t getClockCurrentStatus(hcd_UAC20_Info_t* info, uint8_t enterClkID, uint32_t fs, uint8_t targetClkID)
+{
+  hcd_Status_t ret = HCD_NULL;
+  hcd_UAC20_ClockSrcInfo_t* srcInfo;
+  uint8_t srcID;
+  
+  switch(info->control.entity[enterClkID].type){
+    case(CLOCK_SOURCE):{
+      srcInfo = getClockInfo(info, enterClkID);
+      if ((srcInfo->curSamFreq == fs) && (enterClkID == targetClkID)){
+        ret = HCD_OK;
+      }
+      break;
+    }
+    case(CLOCK_SELECTOR):{
+      srcID = info->control.entity[enterClkID].cSourceID;
+      srcInfo = getClockInfo(info, srcID);
+      if (srcInfo->curSamFreq == fs && ((srcID == targetClkID) || (enterClkID == targetClkID))){
+        ret = HCD_OK;
+      }
+      break;
+    }
+    default:{
+      break;
+    }
+  }
+	return ret;
+}
+
+static void setSamplingRateComplete(hcd_UAC20_Info_t* info, uint32_t fs, uint8_t targetClkID)
+{
+  uint8_t outClkID, inClkID;
+  hcd_Audio_Msg_t msg;
+  
+  msg.msgType = HCD_AUDIO_SAMPLING_RATE_UPDATED;
+  
+  if (info->streamOut.curAltSet){
+    if (info->streamOut.curAltSet->epPtr){
+      outClkID = getClockIdFromStreamAltSet(info, info->streamOut.curAltSet);
+      if (getClockCurrentStatus(info, outClkID, fs, targetClkID) == HCD_OK){
+        msg.devAddr = info->device->devAddr;
+        msg.epNum = info->streamOut.curAltSet->epPtr->bEndpointAddress;
+        msg.other.audio.bitReso = info->streamOut.curAltSet->fmtPtr->bBitResolution;
+        msg.other.audio.fs = fs;
+        msg.other.audio.mps = U16FromU8x2(info->streamOut.curAltSet->epPtr->wMaxPacketSize_msB, info->streamOut.curAltSet->epPtr->wMaxPacketSize_lsB);
+        msg.other.audio.numOfChannels = info->streamOut.curAltSet->strmIfPtr->bNrChannels;
+        HcdAudio_SendMsg(&msg);
+      }
+    }
+  }
+  if (info->streamIn.curAltSet){
+    if (info->streamIn.curAltSet->epPtr){
+      inClkID = getClockIdFromStreamAltSet(info, info->streamIn.curAltSet);
+      if (getClockCurrentStatus(info, inClkID, fs, targetClkID) == HCD_OK){
+        msg.devAddr = info->device->devAddr;
+        msg.epNum = info->streamIn.curAltSet->epPtr->bEndpointAddress;
+        msg.other.audio.bitReso = info->streamIn.curAltSet->fmtPtr->bBitResolution;
+        msg.other.audio.fs = fs;
+        msg.other.audio.mps = U16FromU8x2(info->streamIn.curAltSet->epPtr->wMaxPacketSize_msB, info->streamIn.curAltSet->epPtr->wMaxPacketSize_lsB);
+        msg.other.audio.numOfChannels = info->streamIn.curAltSet->strmIfPtr->bNrChannels;
+        HcdAudio_SendMsg(&msg);
+      }
+    }
+  }
+  
+  
+}
+
+static void requestDoneFromISR(hcd_DeviceInfo_t* device, uint32_t* ep0Buf)
+{
+  usb_SetupPacket_t setup;
+  setup.DWORD[0] = ep0Buf[0];
+  setup.DWORD[1] = ep0Buf[1];
+  if (setup.BIT.bmRequestType.dir == BMREQ_DIR_IN){
+    for (int i = 0; i < HCD_UAC20_MAX_IN_REQUEST_NUM; i++){
+      if ((st_ReqInBuf[i].setup.DWORD[0] == setup.DWORD[0]) && (st_ReqInBuf[i].setup.DWORD[1] == setup.DWORD[1])){
+        memcpy(&st_ReqInBuf[i].dataBuf[0], &ep0Buf[2], setup.BIT.wLength);
+        break;
+      }
+    }
+  }
+}
 
 
 static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setup1)
@@ -494,7 +606,7 @@ static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setu
                             initialRequestDone();
                           }
                         } else {
-                          // sampling freq set complete
+                          setSamplingRateComplete(info, clk->curSamFreq, entityID);
                         }
                         break;
                       }
@@ -550,6 +662,7 @@ static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setu
               case(CLOCK_SELECTOR):{
                 uint8_t selNum;
                 uint8_t* baSrc;
+                hcd_UAC20_ClockSrcInfo_t* srcInfo;
                 csUsbDesc_AudioCtrlIfClkSrc_t* srcDesc;
                 csUsbDesc_AudioCtrlIfClkSel_t* selDesc = (csUsbDesc_AudioCtrlIfClkSel_t*)info->control.entity[entityID].descPtr;
                 baSrc = (uint8_t*)(&selDesc->baCSourceID);
@@ -559,7 +672,8 @@ static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setu
                   info->control.entity[entityID].cSourceID = baSrc[selNum - 1];
                   srcDesc = (csUsbDesc_AudioCtrlIfClkSrc_t*)info->control.entity[baSrc[selNum - 1]].descPtr;
                   if ((srcDesc->bmControls & UAC20_BMCTRL_MSK) == BMCTRL_RO){
-                    // sampling freq set complete
+                    srcInfo = getClockInfo(info, baSrc[selNum - 1]);
+                    setSamplingRateComplete(info, srcInfo->curSamFreq, entityID);
                   }
                 }
                 break;
@@ -619,7 +733,6 @@ hcd_Status_t getSupportClockSource(uint32_t fs, hcd_UAC20_ClockSrcInfo_t* clkSrc
       break;
     }
   }
-  
   return ret;
 }
 
@@ -726,4 +839,17 @@ hcd_Status_t setSamplingRate(uint32_t fs, uint8_t bitReso, uint8_t ifNum, hcd_De
   }
   
   return ret;
+}
+
+void HcdUAC20_InitUAC20(void)
+{
+  hcd_Audio_Protocol_Driver_t protocol = {
+    .parseControlInterface = parseControlInterface,
+    .parseStreamingInterface = parseStreamingInterface,
+    .requestDone = requestDone,
+    .requestDoneFromISR = requestDoneFromISR,
+    .sendInitialRequest = sendInitialRequest,
+    .setSamplingRate = setSamplingRate
+  };
+  HcdAudio_InitUACProtocol(2, &protocol);
 }

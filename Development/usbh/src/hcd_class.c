@@ -6,6 +6,10 @@
 
 #include "hcd_class.h"
 
+#include "hcd_class_mgr_audio.h"
+#include "hcd_class_audio.h"
+#include "hcd_class_audio20.h"
+
 static hcd_ClassMgr_t st_ClassMgr[MAX_DEVICE_NUM];
 static hcd_ClassDriver_t st_ClassDriver[MAX_DEFINED_CLASS_CODE + 1];
 
@@ -109,7 +113,7 @@ hcd_Status_t ParseConfigurationDescriptor(hcd_DeviceInfo_t* device, config_rawde
   return HCD_OK;
 }
 
-hcd_Status_t InitClassDriver(hcd_DeviceInfo_t* device)
+hcd_Status_t StartClassDriver(hcd_DeviceInfo_t* device)
 {
   hcd_ClassMgr_t* mgr = NULL;
   for (int i = 0; i < MAX_DEVICE_NUM; i++){
@@ -141,5 +145,13 @@ hcd_Status_t RegisterClassDriver(hcd_ClassDriver_t* map, uint8_t clsCode)
   st_ClassDriver[clsCode].terinateClass = map->terinateClass;
 
   return HCD_OK;
+}
+
+void HcdClass_InitClassDrivers(void)
+{
+  /*Audio Class*/
+  HcdUAC20_InitUAC20();
+  HcdAudio_InitAudioClass();
+  HcdAudioMgr_InitUAC();
 }
 
