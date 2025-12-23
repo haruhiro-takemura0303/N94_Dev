@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities;.\NXP\frdmmcxn947_hello_world_cm33_core0\component;.\NXP\frdmmcxn947_hello_world_cm33_core0\board;.\NXP\frdmmcxn947_hello_world_cm33_core0\component\uart;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\debug_console_lite;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\str;..\Development\USBD\inc;..\Development\mikrobus\inc;..\Development\usbh\inc;..\Development\usb_common</IncludePath>
+              <IncludePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities;.\NXP\frdmmcxn947_hello_world_cm33_core0\component;.\NXP\frdmmcxn947_hello_world_cm33_core0\board;.\NXP\frdmmcxn947_hello_world_cm33_core0\component\uart;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\debug_console_lite;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\str;..\Development\USBD\inc;..\Development\mikrobus\inc;..\Development\usbh\inc;..\Development\usb_common;.\NXP\frdmmcxn947_hello_world_cm33_core0\device;.\NXP\frdmmcxn947_hello_world_cm33_core0\device\periph;..\Development\flexspi\inc;..\Development\app\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -393,6 +393,16 @@
               <FileName>startup_MCXN947_cm33_core0.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\sys\startup_MCXN947_cm33_core0.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app</GroupName>
+          <Files>
+            <File>
+              <FileName>vcom_writer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\src\vcom_writer.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -473,6 +483,21 @@
               <FileName>ehci.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\usbh\src\ehci.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>flexspi</GroupName>
+          <Files>
+            <File>
+              <FileName>flexspi_pin.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\flexspi\src\flexspi_pin.c</FilePath>
+            </File>
+            <File>
+              <FileName>flexspi_w25q64.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\flexspi\src\flexspi_w25q64.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -623,6 +648,41 @@
               <FileName>fsl_ctimer.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_ctimer.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_powerquad_basic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_powerquad_basic.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_powerquad_data.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_powerquad_data.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_powerquad_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_powerquad_filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_powerquad_math.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_powerquad_math.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_powerquad_matrix.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_powerquad_matrix.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_powerquad_transform.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_powerquad_transform.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsl_flexspi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers\fsl_flexspi.c</FilePath>
             </File>
           </Files>
         </Group>

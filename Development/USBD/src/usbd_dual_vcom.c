@@ -27,8 +27,9 @@ usbd_DualVcom_Info_t* vcom()
 static usbDcd_Status_t setupHandler(usb_SetupPacket_t* setup)
 {
   usbDcd_Status_t ret = USBD_OK;
+	uint16_t actTxLen;
   if (setup){
-    memcpy(setup, &vcom()->lastSetup, sizeof(usb_SetupPacket_t));
+    memcpy(&vcom()->lastSetup, setup, sizeof(usb_SetupPacket_t));
   }
   switch(vcom()->lastSetup.BIT.bRequest){
     case(BREQ_CDC_SET_LINE_CODING):{
@@ -41,11 +42,15 @@ static usbDcd_Status_t setupHandler(usb_SetupPacket_t* setup)
       } else if (setup->BIT.wIndex == USB_VCOM1_IF_NUM){
         Usbd_WriteEp0Buffer(&vcom()->lineCoding[1], USBD_CDC_SIZEOF_LINECODING_STRUCT);
       }
-      Usbd_StartNextTransfer(USBD_EP0_IN, USB_IOC_ENABLE, vcom()->lastSetup.BIT.wLength);
+			actTxLen = vcom()->lastSetup.BIT.wLength;
+			if (actTxLen > USBD_CDC_SIZEOF_LINECODING_STRUCT){
+				actTxLen = USBD_CDC_SIZEOF_LINECODING_STRUCT;
+			}
+      Usbd_StartNextTransfer(USBD_EP0_IN, USB_IOC_ENABLE, actTxLen);
       break;
     }
     case(BREQ_CDC_SET_CONTROL_LINE_STATE):{
-      Usbd_StartNextTransfer(USBD_EP0_OUT, USB_IOC_ENABLE, vcom()->lastSetup.BIT.wLength);
+      Usbd_StartNextTransfer(USBD_EP0_IN, USB_IOC_ENABLE, 0);
       break;
     }
     default:{
@@ -88,6 +93,7 @@ static usbDcd_Status_t dataStatHandler(usbDcd_Control_Dir_t dir)
         break;
       }
       case(BREQ_CDC_GET_LINE_CODING):{
+
         break;
       }
       case(BREQ_CDC_SET_CONTROL_LINE_STATE):{
@@ -104,8 +110,8 @@ static usbDcd_Status_t dataStatHandler(usbDcd_Control_Dir_t dir)
 
 static void configured()
 {
-  Usbd_StartNextTransfer(USB_CDC0_DATAOUTEP_ADDR, USB_IOC_ENABLE, sizeof(stCdcRxBuf[0]));
-  Usbd_StartNextTransfer(USB_CDC1_DATAOUTEP_ADDR, USB_IOC_ENABLE, sizeof(stCdcRxBuf[1]));
+  Usbd_StartNextTransfer(USB_CDC0_DATAOUTEP_ADDR, USB_IOC_ENABLE, USB_CDC_DATAEP_MPS);
+  Usbd_StartNextTransfer(USB_CDC1_DATAOUTEP_ADDR, USB_IOC_ENABLE, USB_CDC_DATAEP_MPS);
 }
 
 static void cmdHandler(uint8_t comIdx, uint16_t size)
@@ -114,29 +120,19 @@ static void cmdHandler(uint8_t comIdx, uint16_t size)
 
 static void dataOutHandler(uint8_t comIdx, uint16_t size)
 {
-  int i;
-  uint16_t len;
-  uint8_t idx = stCommandLine[comIdx].idx;
-  for (i = 0; i < size; i++){
-    stCommandLine[comIdx].lineBuf[idx + i] = stCdcRxBuf[comIdx][i];
-    if (stCdcRxBuf[comIdx][i] == '\n'){
-      stCommandLine[comIdx].lineBuf[idx + i + 1] = 0;
-      stCommandLine[comIdx].idx = 0;
-      len = strlen((const char*)&stCommandLine[comIdx].lineBuf[0]);
-      memcpy(&stCdcTxBuf[comIdx][0], &stCommandLine[comIdx].lineBuf[0], len);
-      Usbd_StartNextTransfer(USB_CDC0_DATAINEP_ADDR + (comIdx * 2), USB_IOC_ENABLE, len);
-      break;
-    }
+	uint8_t snap[512];
+	memcpy(snap, &stCdcRxBuf[comIdx][0], size);
+  if (vcom()->outCallback[comIdx]){
+    vcom()->outCallback[comIdx](comIdx, snap, size);
   }
-  if (i == size){
-    stCommandLine[comIdx].idx += size;
-  }
-  Usbd_StartNextTransfer(USB_CDC0_DATAOUTEP_ADDR + (comIdx * 2), USB_IOC_ENABLE, sizeof(stCdcRxBuf[comIdx]));
+  Usbd_StartNextTransfer(USB_CDC0_DATAOUTEP_ADDR + (comIdx * 2), USB_IOC_ENABLE, USB_CDC_DATAEP_MPS);
 }
 
 static void dataInHandler(uint8_t comIdx, uint16_t size)
 {
-  
+  if (vcom()->inCallback[comIdx]){
+    vcom()->inCallback[comIdx](comIdx, &stCdcRxBuf[comIdx][0], size);
+  }  
 }
 
 static void vcom0CmdHandler(uint16_t size)
@@ -169,6 +165,26 @@ static void cdc1DataInHandler(uint16_t size)
   dataInHandler(1, size);
 }
 
+void DualVcom_SetOutCallBack(uint8_t idx, cdcCallback_t func)
+{
+  if (idx >= USBD_DUALVCOM_NUMOF_COM_IF){
+    return;
+  }
+  vcom()->outCallback[idx] = func;
+}
+
+void DualVcom_SetInCallBack(uint8_t idx, cdcCallback_t func)
+{
+  if (idx >= USBD_DUALVCOM_NUMOF_COM_IF){
+    return;
+  }
+  vcom()->inCallback[idx] = func;
+}
+
+void DualVcom_SetPortCallBack(portEnabledCallback_t func)
+{
+  vcom()->portCallback = func;
+}
 
 void InitDualVcom(void)
 {
@@ -194,3 +210,18 @@ void InitDualVcom(void)
   
   Usbd_SysStart();
 }
+
+usbDcd_Status_t DualVcom_StartInTransfer(uint8_t comIdx, const void* buf, uint16_t len)
+{
+  usbDcd_Status_t ret;
+  if (len > USB_CDC_DATAEP_MPS){
+    return USBD_BUFFER_OVER;
+  }
+  ret = Usbd_Idle(USB_CDC0_DATAINEP_ADDR + (comIdx * 2));
+  if (ret){
+    return ret;
+  }
+  memcpy(&stCdcTxBuf[comIdx][0], buf, len);
+  return Usbd_StartNextTransfer(USB_CDC0_DATAINEP_ADDR + (comIdx * 2), USB_IOC_ENABLE, len);
+}
+

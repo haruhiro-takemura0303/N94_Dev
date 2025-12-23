@@ -70,6 +70,7 @@ typedef enum{
 	USBD_UNSUPPORTED_REQ = -3,
 	USBD_BUFFER_OVER = -4,
 	USBD_USED = -5,
+    USBD_BUSY = -6,
 }usbDcd_Status_t;
 
 typedef struct{
@@ -150,5 +151,6 @@ usbDcd_Status_t Usbd_ReadEp0Buffer(void* buf, uint16_t size);
 usbDcd_Status_t Usbd_WriteEp0Buffer(void* buf, uint16_t size);
 void Usbd_SetClassRequestHandler (usbDcd_Status_t setupfunc(usb_SetupPacket_t*), usbDcd_Status_t dataFunc(usbDcd_Control_Dir_t));
 void Usbd_SetConfiguredFunc(void func(void));
+usbDcd_Status_t Usbd_Idle(uint8_t epNum);
 
 #endif /*__USBD_SYS_H__*/

@@ -26,11 +26,21 @@ enum{
   BREQ_CDC_SET_CONTROL_LINE_STATE,
 };
 
+typedef void cdcCallback_t (uint8_t, uint8_t*, uint16_t);
+typedef void portEnabledCallback_t (uint8_t);
+
 typedef struct{
   usb_SetupPacket_t lastSetup;
   usb_CDC_LineCoding_t lineCoding[USBD_DUALVCOM_NUMOF_COM_IF];
+	cdcCallback_t *outCallback[USBD_DUALVCOM_NUMOF_COM_IF];
+	cdcCallback_t *inCallback[USBD_DUALVCOM_NUMOF_COM_IF];
+  portEnabledCallback_t *portCallback;
 }usbd_DualVcom_Info_t;
 
 void InitDualVcom(void);
+void DualVcom_SetInCallBack(uint8_t idx, cdcCallback_t func);
+void DualVcom_SetOutCallBack(uint8_t idx, cdcCallback_t func);
+void DualVcom_SetPortCallBack(portEnabledCallback_t func);
+usbDcd_Status_t DualVcom_StartInTransfer(uint8_t comIdx, const void* buf, uint16_t len);
 
 #endif /*__USBD_DUAL_VCOM_H__*/

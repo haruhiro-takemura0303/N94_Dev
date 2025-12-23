@@ -462,7 +462,7 @@ static void ep0InHandler(uint16_t size)
         if (stat != USBD_OK){
           ep0Stall();
         } else if ((setup->BIT.bmRequestType.dir == BMREQ_DIR_IN) && setup->BIT.wLength){
-          ep0StatusIn(USB_IOC_ENABLE);
+          ep0StatusOut(USB_IOC_ENABLE);
         }
       } else {
         ep0Stall();
@@ -513,6 +513,9 @@ static void usbdIrqHandler(void)
           device()->txEp[epIdx].handlerCallback(actSize);
         } else {
           actSize = device()->rxEp[epIdx].lastTxSize - stRXdTD[epIdx].token.BIT.totalBytes;
+					if (stRXdTD[epIdx].token.BIT.status != 0x00){
+						__BKPT(0);
+					}
           device()->rxEp[epIdx].handlerCallback(actSize);                    
         }
       }
@@ -670,6 +673,7 @@ usbDcd_Status_t Usbd_OpenEndpoint(uint8_t epNum, int txType, uint16_t mps, uint8
   st_dQH[dci].nextdTDPointer = USBD_dQH_dTD_T;
   st_dQH[dci].endpointCapability.BIT.maximumPacketLength = mps;
   st_dQH[dci].endpointCapability.BIT.mult = mult;
+	st_dQH[dci].endpointCapability.BIT.zlt = 1;
   
   return USBD_OK;
 }
@@ -762,4 +766,27 @@ void Usbd_SetClassRequestHandler (usbDcd_Status_t setupfunc(usb_SetupPacket_t*),
 void Usbd_SetConfiguredFunc(void func(void))
 {
   device()->notifyConfigured = func;
+}
+
+usbDcd_Status_t Usbd_Idle(uint8_t epNum)
+{
+  usbDcd_Status_t ret = USBD_OK;
+  dTD_t* dTDArray;
+  usbDcd_Endpoint_Info_t* epArray;
+  uint8_t epIdx = (epNum & 0xF);
+  
+  if (epIdx >= USBD_MAX_EP_NUM){
+    return USBD_INVALID_PARAM;
+  }
+  if (epNum & 0x80){
+    dTDArray = stTXdTD;
+  } else {
+    dTDArray = stRXdTD;
+  }
+  
+  if(dTDArray[epIdx].token.BIT.status & USBD_dTD_Token_Active){
+    ret = USBD_BUSY;
+  }
+  return ret;
+  
 }
