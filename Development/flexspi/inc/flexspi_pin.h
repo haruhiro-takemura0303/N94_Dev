@@ -1,8 +1,9 @@
 /**
-* @brief   FRDM-MCXN947 board mikroBUS header port initialization
+* @brief   FRDM-MCXN947 board FLEXSPI A0 Device Port Initialization
 * @author  masa
 * @version 1.00
 */
+
 #ifndef __FLEXSPI_PIN_H__
 #define __FLEXSPI_PIN_H__
 

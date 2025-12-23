@@ -1,3 +1,8 @@
+/**
+* @brief   FRDM-MCXN947 board FLEXSPI(Winbond W25Q64) Driver
+* @author  masa
+* @version 1.00
+*/
 
 #ifndef __FLEXSPI_W25Q64_H__
 #define __FLEXSPI_W25Q64_H__

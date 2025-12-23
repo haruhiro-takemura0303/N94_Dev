@@ -1,3 +1,8 @@
+/**
+* @brief   FRDM-MCXN947 board USBD + FLEXSPI Flash Writing App
+* @author  masa
+* @version 1.00
+*/
 
 #include "vcom_writer.h"
 
@@ -9,13 +14,6 @@ uint8_t st_Comp = 0;
 vcom_Writer_Wave_Head_t st_waveTester;
 vcom_Writer_Data_Table_t st_dataTable;
 uint8_t st_TempBuf[256];
-
-static uint32_t st_SeqExpected = 0;
-static uint32_t st_SeqInited   = 0;
-static uint32_t st_SeqPackets  = 0;
-static uint32_t st_SeqBytes    = 0;
-
-
 
 static inline uint32_t disint(void) {
   uint32_t primask;
@@ -205,41 +203,6 @@ static inline uint32_t loadLe32(const uint8_t* p)
   ((uint32_t)p[3] << 24);
 }
 
-/*static void seqTestConsume(uint8_t* dataBuf, uint16_t transLen)
-{
-  uint32_t seq;
-  
-  st_SeqPackets++;
-  st_SeqBytes += transLen;
-  
-  if (transLen < 4){
-    VCOM_PRINTF("SEQ:shortlen len=%u packets=%lu bytes=%lu\n", transLen, st_SeqPackets, st_SeqBytes);
-    return;
-  }
-  
-  seq = loadLe32(dataBuf);
-  
-  if (!st_SeqInited){
-    st_SeqInited = 1;
-    st_SeqExpected = seq;
-    VCOM_PRINTF("SEQ:start seq=%lu\n", seq);
-  }
-  
-  if (seq != st_SeqExpected){
-    VCOM_PRINTF("SEQ:GAP exp=%lu got=%lu len=%u packets=%lu bytes=%lu\n", st_SeqExpected, seq, transLen, st_SeqPackets, st_SeqBytes);
-    
-
-    st_SeqExpected = seq + 1;
-  } else {
-    st_SeqExpected++;
-  }
-
-  if (transLen != 512){
-    VCOM_PRINTF("SEQ:len=%u seq=%lu packets=%lu bytes=%lu\n", transLen, seq, st_SeqPackets, st_SeqBytes);
-  }
-}*/
-
-
 static void flashPageWrite(uint8_t* dataBuf, uint16_t transLen)
 {
   uint32_t offSet, curAddr, rem, pageRem,wrLen;
@@ -273,19 +236,6 @@ static void flashPageWrite(uint8_t* dataBuf, uint16_t transLen)
   enqueueMsg(&msg);
 }
 
-/*static void flashPageWrite(uint8_t* dataBuf, uint16_t transLen)
-{
-(void)dataBuf;
-
-vcom_Writer_Msg_t msg;
-msg.msgType = VCOM_WRITER_RECEIVED;
-
-st_dataTable.curPointer += (uint32_t)transLen;
-
-msg.totalSize = st_dataTable.curPointer;
-enqueueMsg(&msg);
-}*/
-
 static void waveWrite(uint8_t* dataBuf, uint16_t transLen)
 {
   vcom_Writer_Msg_t msg;
@@ -317,10 +267,7 @@ static void vcomOutCallback(uint8_t comIdx, uint8_t* dataBuf, uint16_t transLen)
       portEnabled(0);
     } else if (!st_Fail && !st_Comp){
       waveWrite(dataBuf, transLen);
-      //seqTestConsume(dataBuf, transLen);
     }
-  } else{
-    VCOM_PRINTF("com1\n");
   }
 }
 
@@ -337,11 +284,10 @@ static void vcomWriterTask(void)
     }
     switch(msg.msgType){
       case(VCOM_WRITER_START):{
-        /*uint8_t id[3] = {0};
+        uint8_t id[3] = {0};
         VCOM_PRINTF("Welcome to VCOM File Write\n");
         W25Q64_ReadJedecID(id);
-        VCOM_PRINTF("JedecID: 0x%x, 0x%x, 0x%x\n", id[0], id[1], id[2]);*/
-        VCOM_PRINTF("ACK:0\n");
+        VCOM_PRINTF("JedecID: 0x%x, 0x%x, 0x%x\n", id[0], id[1], id[2]);
         break;
       }
       case(VCOM_WRITER_LOG_NEXT):{
@@ -357,18 +303,10 @@ static void vcomWriterTask(void)
         VCOM_PRINTF("File Writing Start, Size:%ld\n", msg.totalSize);
         break;
       }
-      /*case(VCOM_WRITER_RECEIVED):{
-      if (msg.totalSize != 0xFFFFFFFF){
-      VCOM_PRINTF("ACK:%ld\n", msg.totalSize);
-      } else {
-      VCOM_PRINTF("Write Failed.\n");
-      }
-      break;
-      }*/
       case(VCOM_WRITER_RECEIVED):{
         if (msg.totalSize != 0xFFFFFFFF){
           if ((msg.totalSize & 0xFFFFu) == 0u) {
-            VCOM_PRINTF("ACK:%ld\n", msg.totalSize);
+            VCOM_PRINTF("Current Size:%ld\n", msg.totalSize);
           }
         } else {
           VCOM_PRINTF("Write Failed.\n");
@@ -376,7 +314,7 @@ static void vcomWriterTask(void)
         break;
       }
       case(VCOM_WRITER_COMPLETE):{
-        VCOM_PRINTF("Write Completed.\n");
+        VCOM_PRINTF("Write Completed. Written Size is %dbyte.\n", st_dataTable.curPointer);
         break;
       }
       

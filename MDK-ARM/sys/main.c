@@ -25,6 +25,10 @@
 uint8_t send[256];
 uint8_t rec[256];
 
+uint32_t dword;
+uint16_t word;
+uint8_t byte;
+
 uint8_t sr1;
 uint8_t sr2;
 
@@ -61,25 +65,11 @@ int main (void)
 	
 	/*FlexSPI(Quad) Onboard W25Q64*/
 	InitQSPI_FlexSpi0();
-	for (int i = 0; i < 256; i++){
-		send[i] = i;
-	}
-	//W25Q64_Erase4K(0);
-	//W25Q64_ProgramPage(0x100, send, 256);
-	flexspi_transfer_t flashXfer;
-    flashXfer.deviceAddress = 0;
-    flashXfer.port          = kFLEXSPI_PortA1;
-    flashXfer.cmdType       = kFLEXSPI_Read;
-    flashXfer.SeqNumber     = 1;
-    flashXfer.seqIndex      = LUT_READ_QIO;
-    flashXfer.data          = (uint32_t *)rec;
-    flashXfer.dataSize      = 256;
-	FLEXSPI_TransferBlocking(FLEXSPI0, &flashXfer);
 	//W25Q64_Read(0, rec, 256);
-	//W25Q64_ReadSR1(&sr1);
-	//W25Q64_ReadSR2(&sr2);
-	
-	
+	FLEXSPI_Read(FLEXSPI_AHB_BASE, rec, 256);
+	dword = *(uint32_t*)(FLEXSPI_AHB_BASE);
+	word = *(uint16_t*)(FLEXSPI_AHB_BASE);
+	byte = *(uint8_t*)(FLEXSPI_AHB_BASE);
 	while(1){
 	}
 }

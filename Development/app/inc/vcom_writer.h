@@ -1,3 +1,8 @@
+/**
+* @brief   FRDM-MCXN947 board USBD + FLEXSPI Flash Writing App
+* @author  masa
+* @version 1.00
+*/
 
 #ifndef __VCOM_WRITER_H__
 #define __VCOM_WRITER_H__

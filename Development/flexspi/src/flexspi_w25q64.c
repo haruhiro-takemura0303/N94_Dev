@@ -1,3 +1,8 @@
+/**
+* @brief   FRDM-MCXN947 board FLEXSPI(Winbond W25Q64) Driver
+* @author  masa
+* @version 1.00
+*/
 
 #include "flexspi_w25q64.h"
 
@@ -422,6 +427,6 @@ flexSPI_Status_t W25Q64_Read(uint32_t addr, void *data, size_t len)
 
 void FLEXSPI_Read(uint32_t addr, void *data, size_t len)
 {
-  const uint8_t *src = (const uint8_t *)(FLEXSPI_AHB_BASE + addr);
+  const uint8_t *src = (const uint8_t *)(addr);
   memcpy(data, src, len);
 }
