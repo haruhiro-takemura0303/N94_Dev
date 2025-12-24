@@ -424,9 +424,3 @@ flexSPI_Status_t W25Q64_Read(uint32_t addr, void *data, size_t len)
 {
   return ipRead(data, len, (uint8_t)LUT_READ_QIO, 1, addr, NULL); 
 }
-
-void FLEXSPI_Read(uint32_t addr, void *data, size_t len)
-{
-  const uint8_t *src = (const uint8_t *)(addr);
-  memcpy(data, src, len);
-}

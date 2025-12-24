@@ -12,8 +12,8 @@ static hcd_Audio_Protocol_Driver_t st_UAC10;
 static hcd_Audio_Protocol_Driver_t st_UAC20;
 static hcd_Audio_Protocol_Driver_t *st_CurrentUAC[NUM_OF_MAX_AUDIO_DEVICE] = {NULL};
 static hcd_Audio_Transfer_Driver_t st_Driver[NUM_OF_MAX_AUDIO_DEVICE];
-__ALIGNED(4096) static uint32_t st_IsochOutBuf0[NUM_OF_MAX_AUDIO_DEVICE][256];
-__ALIGNED(4096) static uint32_t st_IsochOutBuf1[NUM_OF_MAX_AUDIO_DEVICE][256];
+__ALIGNED(4096) uint32_t st_IsochOutBuf0[NUM_OF_MAX_AUDIO_DEVICE][256];
+__ALIGNED(4096) uint32_t st_IsochOutBuf1[NUM_OF_MAX_AUDIO_DEVICE][256];
 __ALIGNED(4096) static hcd_Audio_IsochIn_Raw_Buf_t st_IsochInRawBuf0[NUM_OF_MAX_AUDIO_DEVICE];
 __ALIGNED(4096) static hcd_Audio_IsochIn_Raw_Buf_t st_IsochInRawBuf1[NUM_OF_MAX_AUDIO_DEVICE];
 static uint32_t st_IsochInContBuf0[NUM_OF_MAX_AUDIO_DEVICE][256];
@@ -28,6 +28,18 @@ static hcd_Audio_Transfer_Driver_t* getDriver(uint8_t devAddr)
   hcd_Audio_Transfer_Driver_t* ret = NULL;
   for (int i = 0; i < st_NumOfAudioDevice; i++){
     if (st_Driver[i].device->devAddr == devAddr){
+      ret = &st_Driver[i];
+      break;
+    }
+  }
+  return ret;
+}
+
+static hcd_Audio_Transfer_Driver_t* getDriverFromIndex(uint8_t index)
+{
+  hcd_Audio_Transfer_Driver_t* ret = NULL;
+  for (int i = 0; i < st_NumOfAudioDevice; i++){
+    if (st_Driver[i].index == index){
       ret = &st_Driver[i];
       break;
     }
@@ -181,7 +193,10 @@ static void requestComplete(uint16_t transLen, uint8_t devAddr, uint32_t* ep0Buf
 
 static void isochronousOutComplete(uint8_t devAddr, uint8_t epNum, uint16_t nextTxSize, uint32_t* bufPtr, hcd_Periodic_IsochIn_ActTxInfo_t* inTxMap)
 {
-  //getDriver(devAddr)->isochOutCallback(bufPtr, nextTxSize);
+  hcd_Audio_Transfer_Driver_t* driver = getDriver(devAddr);
+  if (driver && driver->isochOutCallback){
+    driver->isochOutCallback(driver->index, bufPtr, nextTxSize);
+  }
 }
 
 static void isochronousInComplete(uint8_t devAddr, uint8_t epNum, uint16_t nextTxSize, uint32_t* bufPtr, hcd_Periodic_IsochIn_ActTxInfo_t* inTxMap)
@@ -305,10 +320,9 @@ static void audioClassTask(void)
               CloseIsochronousEndpoint(msg.devAddr, msg.epNum);
             } else {
               driver->ep.isochIn.init = 1;
-              repMsg.msgType = HCD_AUDIO_STREAMING_START;
-              repMsg.devAddr = msg.devAddr;
-              repMsg.epNum = msg.epNum;
-              enqueueMsg(&repMsg);
+              if (driver->audioDeviceReady){
+                driver->audioDeviceReady(driver->index, AUDIO_DIR_REC);
+              }
             }
           }
         } else {
@@ -326,10 +340,9 @@ static void audioClassTask(void)
               CloseIsochronousEndpoint(msg.devAddr, msg.epNum);
             } else {
               driver->ep.isochOut.init = 1;
-              repMsg.msgType = HCD_AUDIO_STREAMING_START;
-              repMsg.devAddr = msg.devAddr;
-              repMsg.epNum = msg.epNum;
-              enqueueMsg(&repMsg);
+              if (driver->audioDeviceReady){
+                driver->audioDeviceReady(driver->index, AUDIO_DIR_PLAY);
+              }
             }
           }     
         }
@@ -373,6 +386,7 @@ void HcdAudio_InitAudioClass(void)
 {
   hcd_ClassDriver_t comDriver;
   for (int i = 0; i < NUM_OF_MAX_AUDIO_DEVICE; i++){
+    st_Driver[i].index = i + 1;
     st_Driver[i].interruptBuf = &st_InterruptBuf[i][0];
     st_Driver[i].isochInContinuousBuf[0] = &st_IsochInContBuf0[i][0];
     st_Driver[i].isochInContinuousBuf[1] = &st_IsochInContBuf1[i][0];
@@ -392,4 +406,46 @@ void HcdAudio_InitAudioClass(void)
   
   HcdAudioMgr_RegisterAudioDriver(&comDriver);
   
+}
+
+void UsbhAudio_SetReadyNotify(void func(uint8_t, uint8_t))
+{
+  for (int i = 0; i < NUM_OF_MAX_AUDIO_DEVICE; i++){
+    st_Driver[i].audioDeviceReady = func;
+  }
+}
+
+void UsbhAudio_SetPlayCallback(uint8_t index, void func(uint8_t idx, uint32_t* buf, uint16_t nextTxSize))
+{
+  hcd_Audio_Transfer_Driver_t* driver = getDriverFromIndex(index);
+  if (driver){
+    driver->isochOutCallback = func;
+  }
+}
+
+void UsbhAudio_SetRecCallback(uint8_t index, void func(uint8_t idx, uint32_t* buf, uint16_t currentTxSize))
+{
+  hcd_Audio_Transfer_Driver_t* driver = getDriverFromIndex(index);
+  if (driver){
+    driver->isochInCallback = func;
+  }
+}
+
+void UsbhAudio_StartStreaming(uint8_t index, uint8_t dir)
+{
+  hcd_Audio_Msg_t msg;
+  hcd_Audio_Transfer_Driver_t* driver = getDriverFromIndex(index);
+  if (driver && driver->device){
+    if (dir == AUDIO_DIR_REC){
+      msg.msgType = HCD_AUDIO_STREAMING_START;
+      msg.devAddr = driver->device->devAddr;
+      msg.epNum = driver->ep.isochIn.num;
+      enqueueMsg(&msg);
+    } else if (dir == AUDIO_DIR_PLAY){
+      msg.msgType = HCD_AUDIO_STREAMING_START;
+      msg.devAddr = driver->device->devAddr;
+      msg.epNum = driver->ep.isochOut.num;
+      enqueueMsg(&msg);      
+    }
+  }
 }

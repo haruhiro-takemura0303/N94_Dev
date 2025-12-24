@@ -17,20 +17,11 @@
 #include "mikrobus.h"
 
 #include "flexspi_w25q64.h"
+#include "flexspi_wave_player.h"
 
 #define NUMOF_SYS_VECT	16
 #define NUMOF_EXT_VECT	156
 #define NUMOF_VECT			(NUMOF_SYS_VECT + NUMOF_EXT_VECT)
-
-uint8_t send[256];
-uint8_t rec[256];
-
-uint32_t dword;
-uint16_t word;
-uint8_t byte;
-
-uint8_t sr1;
-uint8_t sr2;
 
 __attribute__((section(".ramx"))) __ALIGNED(128) uint32_t vectorOnRam[NUMOF_VECT];
 
@@ -54,22 +45,19 @@ int main (void)
 	LED_GREEN_OFF();
 	
 	/*USB Device*/
-	InitVcomWriter();
-	InitDualVcom();
+	//InitVcomWriter();
+	//InitDualVcom();
+
+	/*FlexSPI(Quad) Onboard W25Q64*/
+	InitQSPI_FlexSpi0();
+	InitWavePlayer(FLEXSPI_AHB_BASE);
 	
 	/*USB Host(Enhanced Host Controller Interface)*/
-	//InitEHCI();
+	InitEHCI();
 	
 	/*mikroBUS*/
 	InitMikroBUS();
-	
-	/*FlexSPI(Quad) Onboard W25Q64*/
-	InitQSPI_FlexSpi0();
-	//W25Q64_Read(0, rec, 256);
-	FLEXSPI_Read(FLEXSPI_AHB_BASE, rec, 256);
-	dword = *(uint32_t*)(FLEXSPI_AHB_BASE);
-	word = *(uint16_t*)(FLEXSPI_AHB_BASE);
-	byte = *(uint8_t*)(FLEXSPI_AHB_BASE);
+
 	while(1){
 	}
 }

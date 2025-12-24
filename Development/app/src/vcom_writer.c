@@ -6,14 +6,14 @@
 
 #include "vcom_writer.h"
 
-vcom_Writer_MsgBox_t st_MsgBox;
-vcom_Writer_LogBuf_t st_LogBuf;
-uint8_t st_Init = 0;
-uint8_t st_Fail = 0;
-uint8_t st_Comp = 0;
-vcom_Writer_Wave_Head_t st_waveTester;
-vcom_Writer_Data_Table_t st_dataTable;
-uint8_t st_TempBuf[256];
+static vcom_Writer_MsgBox_t st_MsgBox;
+static vcom_Writer_LogBuf_t st_LogBuf;
+static uint8_t st_Init = 0;
+static uint8_t st_Fail = 0;
+static uint8_t st_Comp = 0;
+static wave_Head_t st_waveTester;
+static vcom_Writer_Data_Table_t st_dataTable;
+static uint8_t st_TempBuf[256];
 
 static inline uint32_t disint(void) {
   uint32_t primask;
@@ -195,17 +195,9 @@ static void vcomInCallback(uint8_t comIdx, uint8_t* dataBuf, uint16_t transLen)
   enqueueMsg(&msg);
 }
 
-static inline uint32_t loadLe32(const uint8_t* p)
-{
-  return ((uint32_t)p[0]) |
-  ((uint32_t)p[1] << 8) |
-  ((uint32_t)p[2] << 16) |
-  ((uint32_t)p[3] << 24);
-}
-
 static void flashPageWrite(uint8_t* dataBuf, uint16_t transLen)
 {
-  uint32_t offSet, curAddr, rem, pageRem,wrLen;
+  uint32_t offSet, curAddr, rem, pageRem, wrLen;
   vcom_Writer_Msg_t msg;
   
   offSet = 0;
@@ -240,7 +232,7 @@ static void waveWrite(uint8_t* dataBuf, uint16_t transLen)
 {
   vcom_Writer_Msg_t msg;
   if (!st_dataTable.dataSize){
-    memcpy(&st_waveTester, dataBuf, transLen);
+    memcpy(&st_waveTester, dataBuf, sizeof(wave_Head_t));
     if (strncmp((const char*)&st_waveTester.riff_ckID[0], "RIFF", 4) == 0){
       st_dataTable.dataSize = st_waveTester.riff_cksize + 8;
       msg.msgType = VCOM_WRITER_KICK;

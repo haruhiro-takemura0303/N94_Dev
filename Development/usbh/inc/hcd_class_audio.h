@@ -17,6 +17,9 @@
 #define HCD_AUDIO_EXPECTED_ISOCH_IN_DATA_PER_MFRAME ((((((DEFAULT_SAMPLING_RATE / 100) >> 2) / 10) + 1) >> 1) * DEFAULT_BIT_RESO_DIV8 * DEFAULT_NUM_OF_CHANNEL)
 #define HcdAudio_IRQn HSCMP0_IRQn
 
+#define AUDIO_DIR_REC          0x80
+#define AUDIO_DIR_PLAY         0x00
+
 typedef enum {
   HEADER = 1,
   INPUT_TERMINAL,
@@ -109,6 +112,7 @@ typedef struct{
 } hcd_Audio_IsochIn_Raw_Buf_t;
 
 typedef struct{
+  uint8_t index;
   hcd_DeviceInfo_t* device;
   struct{
     hcd_Audio_Endpoint_Info_t interrupt;
@@ -117,8 +121,9 @@ typedef struct{
   }ep;
   uint32_t *interruptBuf;
   uint32_t *isochOutBuf[2];
-  void (*isochOutCallback)(uint32_t* buf, uint16_t nextTxSize);
-  void (*isochInCallback)(uint32_t* buf, uint16_t currentTxSize);
+  void (*audioDeviceReady)(uint8_t idx, uint8_t dir);
+  void (*isochOutCallback)(uint8_t idx, uint32_t* buf, uint16_t nextTxSize);
+  void (*isochInCallback)(uint8_t idx, uint32_t* buf, uint16_t currentTxSize);
   uint32_t *isochInContinuousBuf[2];
   hcd_Audio_IsochIn_Raw_Buf_t *isochInRaw[2];
 }hcd_Audio_Transfer_Driver_t;
@@ -136,5 +141,9 @@ void HcdAudio_InitAudioClass(void);
 void HcdAudio_InitUACProtocol(uint8_t revision, hcd_Audio_Protocol_Driver_t* protocol);
 hcd_Status_t HcdAudio_SendMsg(hcd_Audio_Msg_t* msg);
 
+void UsbhAudio_StartStreaming(uint8_t index, uint8_t dir);
+void UsbhAudio_SetRecCallback(uint8_t index, void func(uint8_t idx, uint32_t* buf, uint16_t currentTxSize));
+void UsbhAudio_SetPlayCallback(uint8_t index, void func(uint8_t idx, uint32_t* buf, uint16_t nextTxSize));
+void UsbhAudio_SetReadyNotify(void func(uint8_t, uint8_t));
 
 #endif /*__HCD_CLASS_AUDIO_H__*/

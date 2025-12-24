@@ -12,6 +12,7 @@
 
 #include "flexspi_w25q64.h"
 #include "usbd_dual_vcom.h"
+#include "wave.h"
 
 #define VCOM_WRITER_MSGBOX_SIZE  32
 #define VCOM_WRITER_IRQn CDOG0_IRQn
@@ -42,23 +43,6 @@ enum{
   VCOM_WRITER_RECEIVED,
   VCOM_WRITER_COMPLETE,
 };
-
-typedef struct{
-	uint8_t riff_ckID[4];
-	uint32_t riff_cksize;
-	uint8_t waveID[4];
-	uint8_t fmt_ckID[4];
-	uint32_t fmt_cksize;
-	uint16_t wFormatTag;
-	uint16_t nChannels;
-	uint32_t nSamplePerSec;
-	uint32_t nAvgBytesPerSec;
-	uint16_t nBlockAlign;
-	uint16_t wBitsPerSample;
-	uint8_t data_ckID[4];
-	uint32_t data_cksize;
-	uint8_t headData[468];
-} vcom_Writer_Wave_Head_t;
 
 typedef struct{
   uint32_t dataSize;

@@ -56,6 +56,5 @@ flexSPI_Status_t W25Q64_ReadSR3(uint8_t *sr3);
 flexSPI_Status_t W25Q64_Erase4K(uint32_t addr);
 flexSPI_Status_t W25Q64_ProgramPage(uint32_t addr, const void *data, size_t len);
 flexSPI_Status_t W25Q64_Read(uint32_t addr, void *data, size_t len);
-void FLEXSPI_Read(uint32_t addr, void *data, size_t len);
 
 #endif /*__FLEXSPI_W25Q64_H__*/
