@@ -211,7 +211,8 @@ typedef struct{
 	uint8_t bLength;
 	uint8_t bDescriptorType;
 	uint8_t bNbrPorts;
-	uint16_t wHubCharacteristics;
+	uint8_t wHubCharacteristics_lsB;
+	uint8_t wHubCharacteristics_msB;
 	uint8_t bPwrOn2PwrGood;
 	uint8_t bHubContrCurrent;
 	uint8_t DeviceRemovable[32];

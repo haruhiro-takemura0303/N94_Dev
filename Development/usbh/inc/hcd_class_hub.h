@@ -11,31 +11,33 @@
 
 #define USB_CLASSCODE_HUB         0x09
 #define NUM_OF_MAX_HUB_DEVICE     1
-#define HCD_HUB_MSGBOX_SIZE 32
+#define HCD_HUB_MSGBOX_SIZE       32
 #define HCD_HUB_MAX_NUM_OF_ALTSET 2
 #define HCD_HUB_MAX_NUM_OF_PORT   4
 #define HCD_HUB_REQ_BOX_SIZE      16
 
 #define HcdHub_IRQn               HSCMP1_IRQn
 
+#define DESCTYPE_HUB              0x29
+
 enum {
-  HCD_HUB_PORT_CONNECTION       = 0,
-  HCD_HUB_PORT_ENABLE           = 1,
-  HCD_HUB_PORT_SUSPEND          = 2,
-  HCD_HUB_PORT_OVER_CURRENT     = 3,
-  HCD_HUB_PORT_RESET            = 4,
+  PORT_CONNECTION       = 0,
+  PORT_ENABLE           = 1,
+  PORT_SUSPEND          = 2,
+  PORT_OVER_CURRENT     = 3,
+  PORT_RESET            = 4,
   
-  HCD_HUB_PORT_POWER            = 8,
-  HCD_HUB_PORT_LOW_SPEED        = 9,
+  PORT_POWER            = 8,
+  PORT_LOW_SPEED        = 9,
   
-  HCD_HUB_C_PORT_CONNECTION     = 16,
-  HCD_HUB_C_PORT_ENABLE         = 17,
-  HCD_HUB_C_PORT_SUSPEND        = 18,
-  HCD_HUB_C_PORT_OVER_CURRENT   = 19,
-  HCD_HUB_C_PORT_RESET          = 20,
+  C_PORT_CONNECTION     = 16,
+  C_PORT_ENABLE         = 17,
+  C_PORT_SUSPEND        = 18,
+  C_PORT_OVER_CURRENT   = 19,
+  C_PORT_RESET          = 20,
   
-  HCD_HUB_PORT_TEST             = 21,
-  HCD_HUB_PORT_INDICATOR        = 22
+  PORT_TEST             = 21,
+  PORT_INDICATOR        = 22
 };
 
 typedef struct{
@@ -74,7 +76,9 @@ typedef union{
 typedef struct{
   uint8_t pwrConfirmed:1;
   uint8_t connConfirmed:1;
-  uint8_t RESERVED:6;
+  uint8_t connConfirming:1;
+  uint8_t disconnConfirming:1;
+  uint8_t RESERVED:4;
 }hcd_Hub_PortManager_t;
 
 typedef struct{
@@ -94,6 +98,8 @@ typedef struct{
 
 typedef struct{
   hcd_DeviceInfo_t* device;
+  uint32_t intrBuf;
+  uint8_t nrPendedPorts;
   hcd_Hub_AltSet_t altSet[HCD_HUB_MAX_NUM_OF_ALTSET];
   hcd_Hub_AltSet_t* curAltSet;
   usbDesc_Hub_t hubDescBuf;
@@ -109,6 +115,7 @@ typedef struct{
   uint8_t msgType;
   uint8_t devAddr;
   uint8_t portNum;
+  uint8_t psiv;
   uint32_t count_ms;
   void (*timerCb)(uint8_t miscVal);
   usb_SetupPacket_t setup;
@@ -123,9 +130,13 @@ typedef struct{
 enum{
   HCD_HUB_CTRL_REQ = 1,
   HCD_HUB_CTRL_REQ_DONE,
+  HCD_HUB_INTR_START,
+  HCD_HUB_INTR_RESTART,
   HCD_HUB_INTR_RECEIVED,
   HCD_HUB_PORT_PEND_RELEASE,
   HCD_HUB_TIMER_REQ,
+  HCD_HUB_TIMER_REQ_DONE,
+  HCD_HUB_INIT_DEVICE,
 };
 
 #endif /*__HCD_CLASS_HUB_H__*/

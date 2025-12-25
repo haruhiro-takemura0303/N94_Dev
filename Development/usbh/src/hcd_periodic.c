@@ -417,7 +417,10 @@ static hcd_Status_t startInterrupt(uint8_t devAddr, uint8_t epNum, uint16_t txLe
   
   idx = getMgr(devAddr, epNum, &mgr);
   if (idx < 0){
-    return -1;
+    return HCD_NULL;
+  }
+  if (st_IntrTxMap & (1 << idx)){
+    return HCD_FULL;
   }
   
   QH = &st_Intr_QH[idx].QH;
