@@ -81,7 +81,7 @@ typedef struct{
   uint8_t RESERVED:4;
 }hcd_Hub_PortManager_t;
 
-typedef struct{
+typedef union{
   struct{
     uint8_t hubAddr:4;
     uint8_t hubPort:4;
@@ -138,5 +138,7 @@ enum{
   HCD_HUB_TIMER_REQ_DONE,
   HCD_HUB_INIT_DEVICE,
 };
+
+void HcdHub_InitDriver(void);
 
 #endif /*__HCD_CLASS_HUB_H__*/

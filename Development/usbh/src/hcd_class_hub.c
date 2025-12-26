@@ -11,6 +11,8 @@ uint8_t st_NrHub = 0;
 hcd_Hub_Request_Buf_t st_HubReqBuf[HCD_HUB_REQ_BOX_SIZE];
 hcd_Hub_MsgBox_t st_HubMsgBox;
 
+static hcd_Status_t createRequest(usb_SetupPacket_t* setup, hcd_DeviceInfo_t* device);
+
 static hcd_Status_t enqueueMsg(hcd_Hub_Msg_t* msg)
 {
   hcd_Status_t ret;
@@ -120,6 +122,33 @@ static uint16_t parseInterface(config_rawdesc_t* confRaw, hcd_DeviceInfo_t* devi
 static uint16_t parseIAD(config_rawdesc_t *confRaw, hcd_DeviceInfo_t* device)
 { 
   return sizeof(usbDesc_InterfaceAssoc_t);
+}
+
+static void initClass(hcd_DeviceInfo_t* device)
+{
+  hcd_Hub_Info_t* info = getInfo(device->devAddr);
+  uint8_t altSetNum = 0;
+  usb_SetupPacket_t setup;
+  
+  for (int i = 1; i < HCD_HUB_MAX_NUM_OF_ALTSET; i++){
+    if (info->altSet[i].intfDesc && info->altSet[i].intfDesc->bInterfaceProtocol == 0x02){
+      altSetNum = i;
+      break;
+    }
+  }
+  if (altSetNum != 0){
+    MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_INTERFACE, BREQ_SET_INTERFACE, altSetNum, info->altSet[0].intfDesc->bInterfaceNumber, 0, &setup);
+    createRequest(&setup, device);
+  } else {
+    info->curAltSet = &info->altSet[0];
+    MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_CLASS, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_HUB << 8 | 0), 0, sizeof(usbDesc_Hub_t), &setup);
+    createRequest(&setup, device);    
+  }
+}
+
+void terminateClass(hcd_DeviceInfo_t* device)
+{
+  
 }
 
 static void requestComplete(uint16_t transLen, uint8_t devAddr, uint32_t* ep0Buf)
@@ -325,9 +354,7 @@ static void requestDone(hcd_DeviceInfo_t* device, uint32_t setup0, uint32_t setu
       if ((setup0 == st_HubReqBuf[i].setup.DWORD[0]) && (setup1 == st_HubReqBuf[i].setup.DWORD[1])){
         st_HubReqBuf[i].setup.DWORD[0] = 0;
         st_HubReqBuf[i].setup.DWORD[1] = 0;
-        if (setup.BIT.bRequest == BREQ_GET_STATUS){
-          newStatus.DWORD = st_HubReqBuf[i].data.DWORD;
-        }
+				newStatus.DWORD = st_HubReqBuf[i].data.DWORD;
         break;
       }
     }
@@ -415,33 +442,34 @@ static void pendedPortRestart(hcd_DeviceInfo_t* device)
 }
 
 
-static void hcdHubTask(void)
+static void hubClassTask(void)
 {
   int i;
   uint8_t portNum;
   uint16_t mps;
   uint32_t intrData;
-  hcd_Hub_Msg_t msg, repMsg;
+  hcd_Hub_Msg_t msg;
   hcd_Hub_Info_t* info;
   hcd_Msg_t hcdMsg;
   hcd_Status_t status, epStat;
   usbDesc_Endpoint2_t* ep;
   usb_SetupPacket_t setup;
+  hcd_Hub_TimerCompVal_t compVal;
   
   static uint32_t ignoredMsg = 0;
   
   NVIC_ClearPendingIRQ(HcdHub_IRQn);
   
-  info = getInfo(msg.devAddr);
-  if (!info){
-    ignoredMsg++;
-    return;
-  }
-  
   for(;;){
     status = dequeueMsg(&msg);
     if (status != HCD_OK){
       break;
+    }
+    
+    info = getInfo(msg.devAddr);
+    if (!info){
+      ignoredMsg++;
+      return;
     }
     
     switch(msg.msgType){
@@ -486,6 +514,9 @@ static void hcdHubTask(void)
         break;
       }
       case(HCD_HUB_INTR_RESTART):{
+        ep = info->curAltSet->epDesc;
+        mps = U16FromU8x2(ep->wMaxPacketSize_msB, ep->wMaxPacketSize_lsB);
+        HcdPeriodic_StartInterruptTransfer(info->device->devAddr, ep->bEndpointAddress, mps);
         break;
       }
       case(HCD_HUB_INTR_RECEIVED):{
@@ -505,13 +536,27 @@ static void hcdHubTask(void)
         break;
       }
       case(HCD_HUB_TIMER_REQ):{
-        
+        compVal.BIT.hubAddr = (msg.devAddr & 0x0F);
+        compVal.BIT.hubPort = (msg.portNum & 0x0F);
+        hcdMsg.type = HCDMSG_GPTIMER;
+        hcdMsg.cont.gp_timer.completeCb = msg.timerCb;
+        hcdMsg.cont.gp_timer.count_us = msg.count_ms * 1000;
+        hcdMsg.cont.gp_timer.miscVal = compVal.BYTE;
+        SendMessageToHostControllerDriver(&hcdMsg);
         break;
       }
       case(HCD_HUB_TIMER_REQ_DONE):{
+        MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_CLASS, BMREQ_ATTR_OTHER, BREQ_GET_STATUS, 0, msg.portNum, 4, &setup);
+        createRequest(&setup, info->device);        
         break;
       }
       case(HCD_HUB_INIT_DEVICE):{
+        hcdMsg.type = HCDMSG_INIT_DEVICE;
+        hcdMsg.cont.init_device.devAddr = 0;
+        hcdMsg.cont.init_device.hubAddr = msg.devAddr;
+        hcdMsg.cont.init_device.hubPort = msg.portNum;
+        hcdMsg.cont.init_device.psiv = msg.psiv;
+        SendMessageToHostControllerDriver(&hcdMsg);
         break;
       }
       default:
@@ -520,3 +565,18 @@ static void hcdHubTask(void)
   }    
 }
 
+void HcdHub_InitDriver(void)
+{
+  hcd_ClassDriver_t drv;
+  drv.parseInterface = parseInterface;
+  drv.parseIAD = parseIAD;
+  drv.initClass = initClass;
+  drv.terinateClass = terminateClass;
+  
+  
+  NVIC_SetPriority(HcdHub_IRQn, 4);
+  NVIC_SetVector(HcdHub_IRQn, (uint32_t)hubClassTask);
+  NVIC_EnableIRQ(HcdHub_IRQn);  
+  
+  RegisterClassDriver(&drv, USB_CLASSCODE_HUB);  
+}

@@ -87,6 +87,7 @@ static void gpTimerIntCb_gpTimerComplete(void)
   hcd_Msg_t msg;
 	
 	EHCI->GPTIMER0CTRL &= ~USBHS_GPTIMER0CTL_RUN_MASK;
+	msg.type = HCDMSG_GPTIMER;
   msg.cont.gp_timer.count_us = GPTIMER_COMPLETE;
 	msg.cont.gp_timer.completeCb = NULL;
   enqueueMsg(&st_HcdMsgBox, &msg);

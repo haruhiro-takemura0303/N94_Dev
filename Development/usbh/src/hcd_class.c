@@ -12,6 +12,8 @@
 
 #include "hcd_class_dummy_hid.h"
 
+#include "hcd_class_hub.h"
+
 static hcd_ClassMgr_t st_ClassMgr[MAX_DEVICE_NUM];
 static hcd_ClassDriver_t st_ClassDriver[MAX_DEFINED_CLASS_CODE + 1];
 
@@ -163,6 +165,9 @@ void HcdClass_InitClassDrivers(void)
 
   /*HID(Dummy)*/
   HcdDummyHid_InitDriver();
+
+  /*Hub*/
+  HcdHub_InitDriver();
 
 }
 

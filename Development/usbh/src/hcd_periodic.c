@@ -462,6 +462,7 @@ static void usbIntProc_Interrupt(void)
     if ((st_Intr_qTD[idx].DWORD2_QTO & EHCI_qTD_QTO_Status_Active) == 0){
       actTxLen = st_IntrMgr[idx].lastTxSize - ((st_Intr_qTD[idx].DWORD2_QTO & EHCI_qTD_QTO_TBT_Msk) >> 16);
       st_Intr_QH[idx].completeCallback(st_IntrMgr[idx].devAddr, st_IntrMgr[idx].epNum, actTxLen);
+			st_IntrTxMap &= ~(1 << idx);
     }
     txMap_tmp &= ~(1 << idx);
   }
