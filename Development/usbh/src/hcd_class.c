@@ -67,7 +67,7 @@ hcd_Status_t ParseConfigurationDescriptor(hcd_DeviceInfo_t* device, config_rawde
   numIfs = configDesc->desc.bNumInterfaces;
   curIf = 0xFF;
   clsCount = 0;
-  for (int j = 0; j < numIfs;){
+  for (int j = 0; ((j < numIfs) || (confRaw->fullLength > confRaw->readPtr));){
     switch(confRaw->rawDesc[confRaw->readPtr + 1]){
       case(DESCTYPE_INTERFACE):{
         intfDesc = (usbDesc_Interface_t*)(&confRaw->rawDesc[confRaw->readPtr]);

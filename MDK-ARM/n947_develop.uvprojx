@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities;.\NXP\frdmmcxn947_hello_world_cm33_core0\component;.\NXP\frdmmcxn947_hello_world_cm33_core0\board;.\NXP\frdmmcxn947_hello_world_cm33_core0\component\uart;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\debug_console_lite;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\str;..\Development\USBD\inc;..\Development\mikrobus\inc;..\Development\usbh\inc;..\Development\usb_common;.\NXP\frdmmcxn947_hello_world_cm33_core0\device;.\NXP\frdmmcxn947_hello_world_cm33_core0\device\periph;..\Development\flexspi\inc;..\Development\app\inc</IncludePath>
+              <IncludePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities;.\NXP\frdmmcxn947_hello_world_cm33_core0\component;.\NXP\frdmmcxn947_hello_world_cm33_core0\board;.\NXP\frdmmcxn947_hello_world_cm33_core0\component\uart;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\debug_console_lite;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\str;..\Development\USBD\inc;..\Development\mikrobus\inc;..\Development\usbh\inc;..\Development\usb_common;.\NXP\frdmmcxn947_hello_world_cm33_core0\device;.\NXP\frdmmcxn947_hello_world_cm33_core0\device\periph;..\Development\flexspi\inc;..\Development\app\inc;..\Development\app\powerQuad_synthsizer\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -408,6 +408,26 @@
               <FileName>flexspi_wave_player.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\app\src\flexspi_wave_player.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>pqsynth</GroupName>
+          <Files>
+            <File>
+              <FileName>pq_synth.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\powerQuad_synthsizer\src\pq_synth.c</FilePath>
+            </File>
+            <File>
+              <FileName>vco.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\powerQuad_synthsizer\src\vco.c</FilePath>
+            </File>
+            <File>
+              <FileName>vca.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\powerQuad_synthsizer\src\vca.c</FilePath>
             </File>
           </Files>
         </Group>

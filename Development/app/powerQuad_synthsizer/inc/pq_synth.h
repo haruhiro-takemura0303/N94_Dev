@@ -1,0 +1,57 @@
+/**
+* @brief   FRDM-MCXN947 board PowerQuad Musical Synthsizer App
+* @author  masa
+* @version 1.00
+*/
+
+#ifndef __PQ_SYNTH_H__
+#define __PQ_SYNTH_H__
+
+#include <stdint.h>
+#include <math.h>
+#include <cmsis_armclang.h>
+#include "fsl_powerquad.h"
+
+#define DEFAULT_FS              44100
+
+#define SYNTH_MAX_NUM           1
+#define SYNTH_MAX_VOICE         4
+#define SYNTH_SAMPLE_BUF_SIZE   ((uint32_t)((((DEFAULT_FS / 100) * 4) + 9) / 10))
+#define SYNTH_MAX_MODULES       8
+
+typedef struct __pqsynth pqSynth_t;
+
+typedef struct{
+  uint8_t activeFlg;
+  uint8_t noteNum;
+  uint8_t velocity;
+  volatile uint32_t noteEvPendFlg;
+} pqSynth_Voice_t;
+
+typedef void audioProcFunc (pqSynth_t* synth, uint32_t frames);
+
+typedef struct{
+  uint8_t moduleID;
+  uint32_t moduleBit;
+  const char* name;
+  audioProcFunc* preProc;
+  audioProcFunc* play;
+} pqSynth_Module_t;
+
+struct __pqsynth{
+  uint8_t deviceIndex;
+  float sampleRate;
+  float ampMax;
+  uint32_t moduleBitMask;
+  pqSynth_Voice_t voices[SYNTH_MAX_VOICE];
+  float voiceBuf[SYNTH_MAX_VOICE][SYNTH_SAMPLE_BUF_SIZE];
+  float gpWorkMem0[SYNTH_MAX_VOICE * SYNTH_SAMPLE_BUF_SIZE];
+  float gpWorkMem1[SYNTH_MAX_VOICE * SYNTH_SAMPLE_BUF_SIZE];
+  pqSynth_Module_t modules[SYNTH_MAX_MODULES];
+  uint8_t nrModules;
+};
+
+void PQSynth_Init(void);
+uint32_t PQSynth_RegisterModule(pqSynth_Module_t* newModule);
+
+#endif /*__PQ_SYNTH_H__*/

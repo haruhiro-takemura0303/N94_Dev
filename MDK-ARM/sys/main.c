@@ -19,6 +19,8 @@
 #include "flexspi_w25q64.h"
 #include "flexspi_wave_player.h"
 
+#include "pq_synth.h"
+
 #define NUMOF_SYS_VECT	16
 #define NUMOF_EXT_VECT	156
 #define NUMOF_VECT			(NUMOF_SYS_VECT + NUMOF_EXT_VECT)
@@ -50,7 +52,10 @@ int main (void)
 
 	/*FlexSPI(Quad) Onboard W25Q64*/
 	InitQSPI_FlexSpi0();
-	InitWavePlayer(FLEXSPI_AHB_BASE);
+	//InitWavePlayer(FLEXSPI_AHB_BASE);
+
+	/*PowerQuad Synthesizer*/
+	PQSynth_Init();
 	
 	/*USB Host(Enhanced Host Controller Interface)*/
 	InitEHCI();
