@@ -6,8 +6,8 @@
 
 #include "hcd_async.h"
 
-static __ALIGNED(32) ehci_QH_array_t st_QH[HCD_ASYNC_NUM_OF_QH];
-static __ALIGNED(32) ehci_qTD_t st_qTD[HCD_ASYNC_NUM_OF_QTD];
+__ALIGNED(32) ehci_QH_array_t st_QH[HCD_ASYNC_NUM_OF_QH];
+__ALIGNED(32) ehci_qTD_t st_qTD[HCD_ASYNC_NUM_OF_QTD];
 
 
 static hcd_Async_QH_Mgr_t st_QHMgr[HCD_ASYNC_NUM_OF_QH];
@@ -201,7 +201,7 @@ static int32_t enqueueMsg(hcd_Async_Msg_t* msg)
 {
   int32_t ret;
   EHCI_DisInt();
-  if (st_MsgBox.deqPtr - st_MsgBox.enqPtr != 1){
+  if (((st_MsgBox.enqPtr + 1) % HCD_ASYNC_MSGBOX_SIZE) != st_MsgBox.deqPtr){
     memcpy(&st_MsgBox.msg[st_MsgBox.enqPtr], msg, sizeof(hcd_Async_Msg_t));
     st_MsgBox.enqPtr++;
     if (st_MsgBox.enqPtr == HCD_ASYNC_MSGBOX_SIZE){
@@ -507,4 +507,27 @@ int32_t HcdAsync_SetEp0Mps(uint8_t devAddr, uint16_t mps)
   msg.devAddr = devAddr;
   
   return enqueueMsg(&msg);
+}
+
+int32_t HcdAsync_GetTransferState(uint8_t devAddr, uint8_t epNum)
+{
+  int32_t idx = -1;
+  ehci_QH_t* QH;
+  ehci_qTD_t* qTD;
+  hcd_Async_QH_Mgr_t* mgr;
+  
+  EHCI_DisInt();
+  
+  idx = getMgr(devAddr, epNum, &mgr);
+  if (idx < 0){
+    EHCI_EnaInt();
+    return -1;
+  }
+  if (st_TxMap & (1 << idx)){
+    EHCI_EnaInt();
+    return -2;
+  }
+
+  EHCI_EnaInt();
+  return 0;
 }

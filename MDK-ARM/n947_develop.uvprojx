@@ -409,6 +409,11 @@
               <FileType>1</FileType>
               <FilePath>..\Development\app\src\flexspi_wave_player.c</FilePath>
             </File>
+            <File>
+              <FileName>midi_drv.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\src\midi_drv.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -432,36 +437,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>usbd</GroupName>
-          <Files>
-            <File>
-              <FileName>usbd_sys.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Development\USBD\src\usbd_sys.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbdDualVcomDescriptor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Development\USBD\src\usbdDualVcomDescriptor.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbd_dual_vcom.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Development\USBD\src\usbd_dual_vcom.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>usb_common</GroupName>
-          <Files>
-            <File>
-              <FileName>usbphy.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Development\usb_common\usbphy.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>usbh_ehci</GroupName>
           <Files>
             <File>
@@ -473,6 +448,11 @@
               <FileName>hcd_class_hub.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\usbh\src\hcd_class_hub.c</FilePath>
+            </File>
+            <File>
+              <FileName>hcd_class_midi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\usbh\src\hcd_class_midi.c</FilePath>
             </File>
             <File>
               <FileName>hcd_class_audio20.c</FileName>
@@ -513,6 +493,36 @@
               <FileName>ehci.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\usbh\src\ehci.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>usbd</GroupName>
+          <Files>
+            <File>
+              <FileName>usbd_sys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\USBD\src\usbd_sys.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbdDualVcomDescriptor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\USBD\src\usbdDualVcomDescriptor.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_dual_vcom.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\USBD\src\usbd_dual_vcom.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>usb_common</GroupName>
+          <Files>
+            <File>
+              <FileName>usbphy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\usb_common\usbphy.c</FilePath>
             </File>
           </Files>
         </Group>

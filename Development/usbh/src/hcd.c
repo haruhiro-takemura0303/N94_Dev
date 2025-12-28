@@ -7,20 +7,20 @@
 #include "hcd.h"
 #include "hcd_class.h"
 
-static hcd_DeviceInfo_t st_DeviceInfo[MAX_DEVICE_NUM];
+hcd_DeviceInfo_t st_DeviceInfo[MAX_DEVICE_NUM];
 
 static usbDesc_Device_t st_DeviceDescriptorContainer[MAX_DEVICE_NUM];
 static usbDesc_Config_t st_ConfigDescriptorContainer[MAX_DEVICE_NUM];
-static config_rawdesc_t st_ConfigRawDesc[MAX_DEVICE_NUM];
+config_rawdesc_t st_ConfigRawDesc[MAX_DEVICE_NUM];
 static string_info_t st_StringInfo[MAX_DEVICE_NUM];
-static usb_EnumState_t st_EnumState[MAX_DEVICE_NUM];
+usb_EnumState_t st_EnumState[MAX_DEVICE_NUM];
 
 static hcd_MsgBox_t st_HcdMsgBox;
 static hcd_MsgBox_t st_CtrlPendBox;
 static hcd_MsgBox_t st_GpTimerPendBox;
 
-static struct{
-  uint32_t buf[256];
+struct{
+  uint32_t buf[128];
 }st_Ep0DatBuf[MAX_DEVICE_NUM];
 
 static struct{
@@ -34,6 +34,8 @@ static struct{
   void (*completeCb)(uint16_t transLen, uint8_t devAddr, uint32_t* ep0Buf);
 }st_CsControlTable[MAX_DEVICE_NUM];
 
+static void (*st_HubPendStart)(uint8_t hubAddr);
+
 static void cscCb_StableConnectionDetect(void);
 static void pedCb_StartEnum(void);
 
@@ -41,7 +43,7 @@ static int32_t enqueueMsg(hcd_MsgBox_t* box, hcd_Msg_t* msg)
 {
   int32_t ret;
   EHCI_DisInt();
-  if (box->deqPtr - box->enqPtr != 1){
+  if (((box->enqPtr + 1) % HCD_MSGBOX_SIZE) != box->deqPtr){
     memcpy(&box->msg[box->enqPtr], msg, sizeof(hcd_Msg_t));
     box->enqPtr++;
     if (box->enqPtr == HCD_MSGBOX_SIZE){
@@ -234,6 +236,9 @@ static void enumerationHandler(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
 			st_EnumState[devIdx] = ADDRESSED;
       device->devAddr = devIdx + 1;
       HcdAsync_SetAddress(devIdx + 1);
+      if (st_HubPendStart){
+        st_HubPendStart(device->hubAddr);
+      }
       MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_STANDARD, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_DEVICE << 8 | 0), 0, 0x12, &msg.cont.ctrl.setup);
       enqueueMsg(&st_HcdMsgBox, &msg);
       break;
@@ -489,4 +494,9 @@ void MakeSETUPPacket(uint8_t dir, uint8_t typ, uint8_t attr, uint8_t bRequest, u
 int32_t SendMessageToHostControllerDriver(hcd_Msg_t* msg)
 {
   return enqueueMsg(&st_HcdMsgBox, msg);
+}
+
+void Hcd_SetHubPendStartFunc(void func(uint8_t))
+{
+  st_HubPendStart = func;
 }

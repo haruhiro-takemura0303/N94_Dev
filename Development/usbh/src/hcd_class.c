@@ -10,12 +10,14 @@
 #include "hcd_class_audio.h"
 #include "hcd_class_audio20.h"
 
+#include "hcd_class_midi.h"
+
 #include "hcd_class_dummy_hid.h"
 
 #include "hcd_class_hub.h"
 
-static hcd_ClassMgr_t st_ClassMgr[MAX_DEVICE_NUM];
-static hcd_ClassDriver_t st_ClassDriver[MAX_DEFINED_CLASS_CODE + 1];
+hcd_ClassMgr_t st_ClassMgr[MAX_DEVICE_NUM];
+hcd_ClassDriver_t st_ClassDriver[MAX_DEFINED_CLASS_CODE + 1];
 
 static int32_t clsNew(uint8_t clsIdx, uint8_t clsCode)
 {
@@ -161,6 +163,7 @@ void HcdClass_InitClassDrivers(void)
   /*Audio Class*/
   HcdUAC20_InitUAC20();
   HcdAudio_InitAudioClass();
+  HcdMIDI_InitMidiClass();
   HcdAudioMgr_InitUAC();
 
   /*HID(Dummy)*/
@@ -168,6 +171,5 @@ void HcdClass_InitClassDrivers(void)
 
   /*Hub*/
   HcdHub_InitDriver();
-
 }
 

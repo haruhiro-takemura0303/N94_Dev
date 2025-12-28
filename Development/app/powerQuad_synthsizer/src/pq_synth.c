@@ -6,11 +6,22 @@
 
 #include "pq_synth.h"
 #include "hcd_class_audio.h"
+#include "midi.h"
 
 #include "vco.h"
 #include "vca.h"
 
 pqSynth_t st_Synth[SYNTH_MAX_NUM];
+
+static inline uint32_t disint(void) {
+  uint32_t primask;
+  __asm volatile ("MRS %0, primask" : "=r"(primask) :: "memory");
+  __asm volatile ("cpsid i" ::: "memory");
+  return primask;
+}
+static inline void enaint(uint32_t primask) {
+  __asm volatile ("MSR primask, %0" :: "r"(primask) : "memory");
+}
 
 static inline pqSynth_t* getSynth(uint8_t devIdx)
 {
@@ -93,24 +104,28 @@ static int findVoice(pqSynth_t* synth, uint8_t note)
   return -1;
 }
 
-static void noteOn(pqSynth_t* synth, uint8_t noteNum, uint8_t velocity)
+static void noteOn(uint8_t noteNum, uint8_t velocity)
 {
+  pqSynth_t* synth = &st_Synth[0];
+  uint32_t premask = disint();
   int v = allocateVoice(synth);
   synth->voices[v].activeFlg = 1;
   synth->voices[v].noteNum = noteNum;
   synth->voices[v].velocity = velocity;
-
   synth->voices[v].noteEvPendFlg = synth->moduleBitMask;
+  enaint(premask);
 }
 
-static void noteOff(pqSynth_t* synth, uint8_t noteNum)
+static void noteOff(uint8_t noteNum, uint8_t velocity)
 {
+  pqSynth_t* synth = &st_Synth[0];
+  uint32_t premask = disint();
   int v = findVoice(synth, noteNum);
   if (v >= 0){
     synth->voices[v].velocity = 0;
     synth->voices[v].noteEvPendFlg = synth->moduleBitMask;
   }
-
+  enaint(premask);
 }
 
 static void deviceNotify(uint8_t deviceIndex, uint8_t dir)
@@ -118,10 +133,6 @@ static void deviceNotify(uint8_t deviceIndex, uint8_t dir)
   pqSynth_t* synth = &st_Synth[0];
   if ((dir == AUDIO_DIR_PLAY) && (synth->deviceIndex == 0)){
     synth->deviceIndex = deviceIndex;
-    noteOn(&st_Synth[0], 0x3C, 0x7F);
-    noteOn(&st_Synth[0], 0x3C, 0x7F);
-    noteOn(&st_Synth[0], 0x3C, 0x7F);
-    noteOn(&st_Synth[0], 0x3C, 0x7F);
     UsbhAudio_SetPlayCallback(deviceIndex, play);
     UsbhAudio_StartStreaming(deviceIndex, dir);
   }
@@ -136,6 +147,10 @@ static void init(float samFreq, float ampCoef)
 
   /*USB Host Callback*/
   UsbhAudio_SetReadyNotify(deviceNotify);
+
+  /*MIDI Callback*/
+  MIDI_SetCallback(MIDI_CIN_NOTE_OFF, noteOff);
+  MIDI_SetCallback(MIDI_CIN_NOTE_ON, noteOn);
   
   /*Module Initialization*/
   InitVCO();

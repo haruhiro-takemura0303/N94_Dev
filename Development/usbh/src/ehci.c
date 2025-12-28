@@ -27,7 +27,10 @@ static void ehciHandler(void)
   if (usbSts & USBHS_USBSTS_UEI_MASK){
     /*USB Error Interrupt (Invalid Transfer Completion)*/
     EHCI->USBSTS = USBHS_USBSTS_UEI_MASK;
-  } 
+  }
+	if (usbSts & USBHS_USBSTS_SEI_MASK){
+		EHCI->USBSTS = USBHS_USBSTS_SEI_MASK;
+	}
   if (usbSts & USBHS_USBSTS_PCI_MASK){
     /*Port Status Change*/
     EHCI->USBSTS = USBHS_USBSTS_PCI_MASK;

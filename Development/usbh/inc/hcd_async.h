@@ -60,6 +60,6 @@ int32_t CloseAsyncEndpoint(uint8_t devAddr, uint8_t epNum);
 int32_t HcdAsync_StartTransfer(uint8_t devAddr, uint8_t epNum, uint16_t txLen);
 int32_t HcdAsync_SetAddress(uint8_t devAddr);
 int32_t HcdAsync_SetEp0Mps(uint8_t devAddr, uint16_t mps);
-
+int32_t HcdAsync_GetTransferState(uint8_t devAddr, uint8_t epNum);
 
 #endif /*__HCD_ASYNC_H__*/

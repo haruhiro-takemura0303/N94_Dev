@@ -17,7 +17,7 @@ static hcd_UAC20_PendRequest_Box_t st_PendBox;
 static hcd_Status_t enqueue(usb_SetupPacket_t* setup)
 {
   hcd_Status_t ret;
-  if (st_PendBox.deqPtr - st_PendBox.enqPtr != 1){
+  if (((st_PendBox.enqPtr + 1) % HCD_UAC20_MAX_PENDED_SETUP) != st_PendBox.deqPtr){
     memcpy(&st_PendBox.pendedSetup[st_PendBox.enqPtr], setup, sizeof(usb_SetupPacket_t));
     st_PendBox.enqPtr++;
     if (st_PendBox.enqPtr == HCD_UAC20_MAX_PENDED_SETUP){

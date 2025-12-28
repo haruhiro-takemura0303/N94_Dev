@@ -6,9 +6,9 @@
 
 #include "hcd_class_mgr_audio.h"
 
-static hcd_AudioMgr_t st_AudioDist[MAX_DEVICE_NUM];
+hcd_AudioMgr_t st_AudioDist[MAX_DEVICE_NUM];
 static hcd_ClassDriver_t st_AudioDriver;
-static hcd_ClassDriver_t st_MidiDriver;
+hcd_ClassDriver_t st_MidiDriver;
 
 static uint16_t parseInterface(config_rawdesc_t *confRaw, hcd_DeviceInfo_t* device)
 {

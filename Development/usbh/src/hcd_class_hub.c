@@ -17,7 +17,7 @@ static hcd_Status_t enqueueMsg(hcd_Hub_Msg_t* msg)
 {
   hcd_Status_t ret;
   EHCI_DisInt();
-  if (st_HubMsgBox.deqPtr - st_HubMsgBox.enqPtr != 1){
+  if (((st_HubMsgBox.enqPtr + 1) % HCD_HUB_MSGBOX_SIZE) != st_HubMsgBox.deqPtr){
     memcpy(&st_HubMsgBox.msg[st_HubMsgBox.enqPtr], msg, sizeof(hcd_Hub_Msg_t));
     st_HubMsgBox.enqPtr++;
     if (st_HubMsgBox.enqPtr == HCD_HUB_MSGBOX_SIZE){
@@ -129,8 +129,12 @@ static void initClass(hcd_DeviceInfo_t* device)
   hcd_Hub_Info_t* info = getInfo(device->devAddr);
   uint8_t altSetNum = 0;
   usb_SetupPacket_t setup;
+	
+    info->curAltSet = &info->altSet[0];
+    MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_CLASS, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_HUB << 8 | 0), 0, sizeof(usbDesc_Hub_t), &setup);
+    createRequest(&setup, device);
   
-  for (int i = 1; i < HCD_HUB_MAX_NUM_OF_ALTSET; i++){
+  /*for (int i = 1; i < HCD_HUB_MAX_NUM_OF_ALTSET; i++){
     if (info->altSet[i].intfDesc && info->altSet[i].intfDesc->bInterfaceProtocol == 0x02){
       altSetNum = i;
       break;
@@ -140,10 +144,8 @@ static void initClass(hcd_DeviceInfo_t* device)
     MakeSETUPPacket(BMREQ_DIR_OUT, BMREQ_TYPE_STANDARD, BMREQ_ATTR_INTERFACE, BREQ_SET_INTERFACE, altSetNum, info->altSet[0].intfDesc->bInterfaceNumber, 0, &setup);
     createRequest(&setup, device);
   } else {
-    info->curAltSet = &info->altSet[0];
-    MakeSETUPPacket(BMREQ_DIR_IN, BMREQ_TYPE_CLASS, BMREQ_ATTR_DEVICE, BREQ_GET_DESCRIPTOR, (DESCTYPE_HUB << 8 | 0), 0, sizeof(usbDesc_Hub_t), &setup);
-    createRequest(&setup, device);    
-  }
+    
+  }*/
 }
 
 void terminateClass(hcd_DeviceInfo_t* device)
@@ -565,6 +567,14 @@ static void hubClassTask(void)
   }    
 }
 
+static void pendedPortReleaseNotify(uint8_t hubAddr)
+{
+  hcd_Hub_Msg_t msg;
+  msg.msgType = HCD_HUB_PORT_PEND_RELEASE;
+  msg.devAddr = hubAddr;
+  enqueueMsg(&msg);
+}
+
 void HcdHub_InitDriver(void)
 {
   hcd_ClassDriver_t drv;
@@ -573,10 +583,11 @@ void HcdHub_InitDriver(void)
   drv.initClass = initClass;
   drv.terinateClass = terminateClass;
   
+  Hcd_SetHubPendStartFunc(pendedPortReleaseNotify);
   
   NVIC_SetPriority(HcdHub_IRQn, 4);
   NVIC_SetVector(HcdHub_IRQn, (uint32_t)hubClassTask);
-  NVIC_EnableIRQ(HcdHub_IRQn);  
+  NVIC_EnableIRQ(HcdHub_IRQn);
   
   RegisterClassDriver(&drv, USB_CLASSCODE_HUB);  
 }

@@ -63,7 +63,7 @@ static hcd_Status_t enqueueMsg(hcd_Audio_Msg_t* msg)
 {
   hcd_Status_t ret;
   EHCI_DisInt();
-  if (st_AudioMsgBox.deqPtr - st_AudioMsgBox.enqPtr != 1){
+  if (((st_AudioMsgBox.enqPtr + 1) % HCD_AUDIO_MSGBOX_SIZE) != st_AudioMsgBox.deqPtr){
     memcpy(&st_AudioMsgBox.msg[st_AudioMsgBox.enqPtr], msg, sizeof(hcd_Audio_Msg_t));
     st_AudioMsgBox.enqPtr++;
     if (st_AudioMsgBox.enqPtr == HCD_AUDIO_MSGBOX_SIZE){

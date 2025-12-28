@@ -13,9 +13,39 @@
 #define HCD_MIDI_MAX_JACK_NUM         8
 #define NUM_OF_MAX_MIDI_DEVICE        1
 #define HCD_MIDI_MSGBOX_SIZE          64
-#define HCD_MIDI_OUT_RINGBUF_SIZE     256
+#define HCD_MIDI_OUT_RINGBUF_SIZE     64
 
+#define MIDI_DIR_IN                   0x80
+#define MIDI_DIR_OUT                  0x00
 
+#define HcdMIDI_IRQn HSCMP2_IRQn
+
+typedef union{
+  struct{
+    uint8_t cin:4;
+    uint8_t cn:4;
+    uint8_t status;
+    uint8_t noteNum;
+    uint8_t velocity;
+  } FIELD;
+  uint32_t DWORD;
+} usb_MidiPacket_t;
+
+typedef enum {
+  MS_HEADER = 1,
+  MIDI_IN_JACK,
+  MIDI_OUT_JACK,
+  ELEMENT,
+}UMC_Intf_t;
+
+typedef enum {
+  MS_GENERAL = 1,
+}UMC_Ep_t;
+
+typedef enum{
+  JACK_EMBEDDED = 1,
+  JACK_EXTERNAL,
+}UMC_Jack_t;
 
 typedef struct{
 	uint8_t bLength;
@@ -58,7 +88,7 @@ typedef struct{
 
 typedef struct{
   csUsbDesc_MidiInJk_t* inJack;
-  csUsbDesc_MidiOutJk_t* outJk;
+  csUsbDesc_MidiOutJk_t* outJack;
 } hcd_MIDI_Cable_t;
 
 typedef struct{
@@ -66,36 +96,31 @@ typedef struct{
   csUsbDesc_MidiStrmBulkEndpt_t* csEpDesc;
   uint8_t nrCables;
   hcd_MIDI_Cable_t cables[HCD_MIDI_MAX_CABLE_PER_EP];
+  usb_MidiPacket_t* dataBuf;
+  void (*completeCallback)(usb_MidiPacket_t* buf, uint16_t nrMidiPkt);
 } hcd_MIDI_Ep_t;
 
 typedef struct{
+  uint8_t index;
   hcd_DeviceInfo_t* device;
   usbDesc_Interface_t* intf;
   hcd_MIDI_Ep_t bulkOut;
   hcd_MIDI_Ep_t bulkIn;
+  void (*midiDeviceReady)(uint8_t idx, uint8_t dir);
   csUsbDesc_MidiInJk_t *inJackTbl[HCD_MIDI_MAX_JACK_NUM];
   csUsbDesc_MidiOutJk_t *outJackTbl[HCD_MIDI_MAX_JACK_NUM];
 } hcd_MIDI_Info_t;
 
-typedef union{
-  struct{
-    uint8_t cn:4;
-    uint8_t cin:4;
-    uint8_t status;
-    uint8_t noteNum;
-    uint8_t velocity;
-  } FIELD;
-  uint32_t DWORD;
-} usb_MidiPacket_t;
-
 enum{
   HCD_MIDI_BULK_IN = 1,
-  HCD_MIDI_BULK_OUT,
+  HCD_MIDI_BULK_OUT_COMP,
+  HCD_MIDI_BULK_OUT_SEND
 };
 
 typedef struct{
   uint8_t msgType;
   uint8_t devAddr;
+  uint16_t transLen;
   usb_MidiPacket_t umidiPkt;
 } hcd_MIDI_Msg_t;
 
@@ -104,5 +129,16 @@ typedef struct{
   uint8_t enqPtr;
   uint8_t deqPtr;
 } hcd_MIDI_MsgBox_t;
+
+typedef struct{
+  uint8_t devAddr;
+  usb_MidiPacket_t umidi[HCD_MIDI_OUT_RINGBUF_SIZE];
+  uint32_t enqPtr;
+  uint32_t deqPtr;
+} hcd_MIDI_RingBuf_t;
+
+void HcdMIDI_InitMidiClass(void);
+void UsbhMIDI_SetReadyNotify(void func(uint8_t, uint8_t));
+void UsbhMIDI_SetInCallback(uint8_t index, void func(usb_MidiPacket_t* buf, uint16_t nrMidiPkt));
 
 #endif /*__HCD_CLASS_MIDI_H__*/

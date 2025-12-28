@@ -102,7 +102,7 @@ static hcd_Status_t enqueueMsg(hcd_Periodic_Msg_t* msg)
 {
   hcd_Status_t ret;
   EHCI_DisInt();
-  if (st_MsgBox.deqPtr - st_MsgBox.enqPtr != 1){
+  if (((st_MsgBox.enqPtr + 1) % HCD_PERIODIC_MSGBOX_SIZE) != st_MsgBox.deqPtr){
     memcpy(&st_MsgBox.msg[st_MsgBox.enqPtr], msg, sizeof(hcd_Periodic_Msg_t));
     st_MsgBox.enqPtr++;
     if (st_MsgBox.enqPtr == HCD_PERIODIC_MSGBOX_SIZE){
