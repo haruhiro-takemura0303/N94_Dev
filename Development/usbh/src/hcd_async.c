@@ -81,11 +81,13 @@ static int32_t setEp0Transfer(uint8_t devAddr)
     setupqTD->DWORD1_ANQP = (uint32_t)&dataqTD->DWORD0_NQP;
     setupqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_0 | EHCI_qTD_QTO_TBT(8) | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_SETUP | EHCI_qTD_QTO_Status_Active);
     setupqTD->DWORD3_BP0 = (uint32_t)(mgr->bufPointer);
+    setupqTD->DWORD4_BP1 = ((uint32_t)(mgr->bufPointer) & 0xFFFFF000) + 0x1000;
     
     dataqTD->DWORD0_NQP = (uint32_t)&statusqTD->DWORD0_NQP;
     dataqTD->DWORD1_ANQP = (uint32_t)&statusqTD->DWORD1_ANQP;
     dataqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_1 | EHCI_qTD_QTO_TBT(setup.BIT.wLength) | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_IN | EHCI_qTD_QTO_Status_Active);
     dataqTD->DWORD3_BP0 = (uint32_t)(&mgr->bufPointer[2]);
+    dataqTD->DWORD4_BP1 = ((uint32_t)(&mgr->bufPointer[2]) & 0xFFFFF000) + 0x1000;
     
     statusqTD->DWORD0_NQP = EHCI_qTD_NQP_T;
     statusqTD->DWORD1_ANQP = EHCI_qTD_ANQP_T;
@@ -96,11 +98,13 @@ static int32_t setEp0Transfer(uint8_t devAddr)
     setupqTD->DWORD1_ANQP = (uint32_t)&dataqTD->DWORD0_NQP;
     setupqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_0 | EHCI_qTD_QTO_TBT(8) | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_SETUP | EHCI_qTD_QTO_Status_Active);
     setupqTD->DWORD3_BP0 = (uint32_t)(mgr->bufPointer);
+    setupqTD->DWORD4_BP1 = ((uint32_t)(mgr->bufPointer) & 0xFFFFF000) + 0x1000;
     
     dataqTD->DWORD0_NQP = (uint32_t)&statusqTD->DWORD0_NQP;
     dataqTD->DWORD1_ANQP = (uint32_t)&statusqTD->DWORD1_ANQP;
     dataqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_1 | EHCI_qTD_QTO_TBT(setup.BIT.wLength) | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_OUT | EHCI_qTD_QTO_Status_Active);
     dataqTD->DWORD3_BP0 = (uint32_t)(&mgr->bufPointer[2]);
+    dataqTD->DWORD4_BP1 = ((uint32_t)(&mgr->bufPointer[2]) & 0xFFFFF000) + 0x1000;
     
     statusqTD->DWORD0_NQP = EHCI_qTD_NQP_T;
     statusqTD->DWORD1_ANQP = EHCI_qTD_ANQP_T;
@@ -111,6 +115,7 @@ static int32_t setEp0Transfer(uint8_t devAddr)
     setupqTD->DWORD1_ANQP = (uint32_t)&statusqTD->DWORD0_NQP;
     setupqTD->DWORD2_QTO = (EHCI_qTD_QTO_dt_0 | EHCI_qTD_QTO_TBT(8) | EHCI_qTD_QTO_CERR | EHCI_qTD_QTO_PID_SETUP | EHCI_qTD_QTO_Status_Active);
     setupqTD->DWORD3_BP0 = (uint32_t)(mgr->bufPointer);
+    setupqTD->DWORD4_BP1 = ((uint32_t)(mgr->bufPointer) & 0xFFFFF000) + 0x1000;
     
     statusqTD->DWORD0_NQP = EHCI_qTD_NQP_T;
     statusqTD->DWORD1_ANQP = EHCI_qTD_ANQP_T;
@@ -148,6 +153,7 @@ static int32_t startTransfer(uint8_t devAddr, uint8_t epNum, uint16_t txLen)
       qTD->DWORD2_QTO |= EHCI_qTD_QTO_PID_OUT;
     }
     qTD->DWORD3_BP0 = (uint32_t)mgr->bufPointer;
+    qTD->DWORD4_BP1 = ((uint32_t)mgr->bufPointer & 0xFFFFF000) + 0x1000;
   }
   
   mgr->lastTxSize = txLen;

@@ -434,6 +434,11 @@
               <FileType>1</FileType>
               <FilePath>..\Development\app\powerQuad_synthsizer\src\vca.c</FilePath>
             </File>
+            <File>
+              <FileName>vco_wavetbl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\powerQuad_synthsizer\src\vco_wavetbl.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

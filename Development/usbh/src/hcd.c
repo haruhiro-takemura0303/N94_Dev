@@ -20,7 +20,7 @@ static hcd_MsgBox_t st_CtrlPendBox;
 static hcd_MsgBox_t st_GpTimerPendBox;
 
 struct{
-  uint32_t buf[128];
+  uint32_t buf[256];
 }st_Ep0DatBuf[MAX_DEVICE_NUM];
 
 static struct{

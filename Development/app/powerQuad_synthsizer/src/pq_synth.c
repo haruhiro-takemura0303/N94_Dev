@@ -9,6 +9,7 @@
 #include "midi.h"
 
 #include "vco.h"
+#include "vco_wavetbl.h"
 #include "vca.h"
 
 pqSynth_t st_Synth[SYNTH_MAX_NUM];
@@ -153,7 +154,8 @@ static void init(float samFreq, float ampCoef)
   MIDI_SetCallback(MIDI_CIN_NOTE_ON, noteOn);
   
   /*Module Initialization*/
-  InitVCO();
+  //InitVCO();
+  InitVCOWaveTable(synth);
   InitVCA(synth);
 
 }

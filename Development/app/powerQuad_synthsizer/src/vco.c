@@ -6,8 +6,8 @@
 
 #include "vco.h"
 
-pqSynth_VCO_t st_VCO;
-float st_NoteFreqTbl[128];
+static pqSynth_VCO_t st_VCO;
+static float st_NoteFreqTbl[128];
 
 static void initNoteFreqTbl(void)
 {

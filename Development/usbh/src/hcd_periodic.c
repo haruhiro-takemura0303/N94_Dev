@@ -191,7 +191,7 @@ hcd_Status_t OpenIsochronousEndpoint(uint8_t devAddr, uint8_t epNum, uint16_t mp
       for (int i = 0; i < 2; i++){
         for (int j = 0; j < HCD_PERIODIC_iTD_SINGLE_BUF; j++){
           iTDs->doubleBuf[i].iTD[j].DWORD9_BP0 = EHCI_iTD_BPx_BP(mgr->buf[i]) | EHCI_iTD_BP0_EndPt(epNum) | EHCI_iTD_BP0_DA(devAddr);
-          iTDs->doubleBuf[i].iTD[j].DWORD10_BP1 = EHCI_iTD_BP1_D_IN | EHCI_iTD_BP1_MPS(mps);
+          iTDs->doubleBuf[i].iTD[j].DWORD10_BP1 = (EHCI_iTD_BPx_BP(mgr->buf[i]) + 0x1000) | EHCI_iTD_BP1_D_IN | EHCI_iTD_BP1_MPS(mps);
           iTDs->doubleBuf[i].iTD[j].DWORD11_BP2 = EHCI_iTD_BP2_Mult_1;
           iTDs->doubleBuf[i].iTD[j].DWORD12_BP3 = 0;
           iTDs->doubleBuf[i].iTD[j].DWORD13_BP4 = 0;
@@ -209,7 +209,7 @@ hcd_Status_t OpenIsochronousEndpoint(uint8_t devAddr, uint8_t epNum, uint16_t mp
       for (int i = 0; i < 2; i++){
         for (int j = 0; j < HCD_PERIODIC_iTD_SINGLE_BUF; j++){
           iTDs->doubleBuf[i].iTD[j].DWORD9_BP0 = EHCI_iTD_BPx_BP(mgr->buf[i]) | EHCI_iTD_BP0_EndPt(epNum) | EHCI_iTD_BP0_DA(devAddr);
-          iTDs->doubleBuf[i].iTD[j].DWORD10_BP1 = EHCI_iTD_BP1_D_OUT | EHCI_iTD_BP1_MPS(mps);
+          iTDs->doubleBuf[i].iTD[j].DWORD10_BP1 = (EHCI_iTD_BPx_BP(mgr->buf[i]) + 0x1000) | EHCI_iTD_BP1_D_OUT | EHCI_iTD_BP1_MPS(mps);
           iTDs->doubleBuf[i].iTD[j].DWORD11_BP2 = EHCI_iTD_BP2_Mult_1;
           iTDs->doubleBuf[i].iTD[j].DWORD12_BP3 = 0;
           iTDs->doubleBuf[i].iTD[j].DWORD13_BP4 = 0;
@@ -435,6 +435,7 @@ static hcd_Status_t startInterrupt(uint8_t devAddr, uint8_t epNum, uint16_t txLe
     qTD->DWORD2_QTO |= EHCI_qTD_QTO_PID_OUT;
   }
   qTD->DWORD3_BP0 = (uint32_t)mgr->bufPointer;
+  qTD->DWORD4_BP1 = ((uint32_t)mgr->bufPointer & 0xFFFFF000) + 0x1000;
   
   mgr->lastTxSize = txLen;
   st_IntrTxMap |= (1 << idx);
