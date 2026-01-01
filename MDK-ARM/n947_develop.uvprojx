@@ -439,6 +439,21 @@
               <FileType>1</FileType>
               <FilePath>..\Development\app\powerQuad_synthsizer\src\vco_wavetbl.c</FilePath>
             </File>
+            <File>
+              <FileName>vco_ks.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\powerQuad_synthsizer\src\vco_ks.c</FilePath>
+            </File>
+            <File>
+              <FileName>dj_amp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\powerQuad_synthsizer\src\dj_amp.c</FilePath>
+            </File>
+            <File>
+              <FileName>dj_cab.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\powerQuad_synthsizer\src\dj_cab.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

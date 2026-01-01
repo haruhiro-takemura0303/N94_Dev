@@ -10,7 +10,10 @@
 
 #include "vco.h"
 #include "vco_wavetbl.h"
+#include "vco_ks.h"
 #include "vca.h"
+#include "dj_amp.h"
+#include "dj_cab.h"
 
 pqSynth_t st_Synth[SYNTH_MAX_NUM];
 
@@ -71,7 +74,9 @@ static void play(uint8_t idx, uint32_t* buf, uint16_t nextTxSize)
   for (int i = 0; i < nrFrames; i++) {
     float mix = 0.0f;
     for (int v = 0; v < SYNTH_MAX_VOICE; v++) {
-      mix += synth->voiceBuf[v][i];
+      if (synth->voices[v].activeFlg){
+        mix += synth->voiceBuf[v][i];
+      }
     }
     if (mix > 1.0f){
       mix = 1.0f;
@@ -142,22 +147,25 @@ static void deviceNotify(uint8_t deviceIndex, uint8_t dir)
 static void init(float samFreq, float ampCoef)
 {
   pqSynth_t* synth = &st_Synth[0];
-
+  
   synth->sampleRate = samFreq;
   synth->ampMax = ampCoef;
-
+  
   /*USB Host Callback*/
   UsbhAudio_SetReadyNotify(deviceNotify);
-
+  
   /*MIDI Callback*/
   MIDI_SetCallback(MIDI_CIN_NOTE_OFF, noteOff);
   MIDI_SetCallback(MIDI_CIN_NOTE_ON, noteOn);
   
   /*Module Initialization*/
   //InitVCO();
-  InitVCOWaveTable(synth);
+  //InitVCOWaveTable(synth);
+  InitVCOKerplusStrong(synth);
+  InitDjentAmp(synth);
+  InitDjentCab(synth);
   InitVCA(synth);
-
+  
 }
 
 void PQSynth_Init(void)
@@ -182,6 +190,6 @@ uint32_t PQSynth_RegisterModule(pqSynth_Module_t* newModule)
   retBitMap = (1 << synth->nrModules);
   synth->nrModules++;
   synth->moduleBitMask |= retBitMap;
-
+  
   return retBitMap;
 }
