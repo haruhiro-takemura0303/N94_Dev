@@ -11,6 +11,7 @@
 
 #include "usbd_dual_vcom.h"
 #include "vcom_writer.h"
+#include "vcom_audio_recorder.h"
 
 #include "hcd.h"
 
@@ -47,10 +48,7 @@ int main (void)
 	LED_BLUE_OFF();
 	LED_RED_OFF();
 	LED_GREEN_OFF();
-	
-	/*USB Device*/
-	//InitVcomWriter();
-	//InitDualVcom();
+
 
 	/*FlexSPI(Quad) Onboard W25Q64*/
 	InitQSPI_FlexSpi0();
@@ -60,10 +58,16 @@ int main (void)
 	InitMidiDriver();
 
 	/*PowerQuad Synthesizer*/
-	PQSynth_Init();
+	//PQSynth_Init();
+	PQSynth_InitRecMode();
+
+	/*USB Device*/
+	//InitVcomWriter();
+	InitVcomRecorder();
+	InitDualVcom();
 	
 	/*USB Host(Enhanced Host Controller Interface)*/
-	InitEHCI();
+	//InitEHCI();
 	
 	/*mikroBUS*/
 	InitMikroBUS();

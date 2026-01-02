@@ -11,6 +11,12 @@
 
 #define KS_MAX_DELAY_SAMPLES    4096
 #define KS_USE_LP               0
+#define KS_PICK_OFFSET_DIV      12
+#define KS_PICK_MIX             0.75f
+#define KS_PICKBUF_SIZE         512
+#define KS_MUTE_TIME_SEC        0.060f
+#define KS_MUTE_LP_ALPHA        0.45f
+#define KS_MUTE_MIX_MAX         0.85f
 
 typedef struct{
   uint32_t delayLen;
@@ -24,6 +30,12 @@ typedef struct{
   }allpass;
   uint16_t quietCount;
   uint16_t releasing;
+
+  float muteEnv;
+  float muteLP;
+  float pickBuf[KS_PICKBUF_SIZE];
+  uint32_t pickWp;
+  uint32_t pickOfs;
 } pqSynth_KS_Voice_t;
 
 typedef struct{

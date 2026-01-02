@@ -9,6 +9,7 @@
 static pqSynth_KS_t st_KS;
 static float st_NoteFreqTbl[128];
 static uint32_t st_Rng = 0x12345678u;
+float st_MuteEnvStep;
 
 static void initNoteFreqTbl(void)
 {
@@ -97,8 +98,8 @@ static void resetVoice(uint32_t v)
 
 static void noteOn(pqSynth_t* synth, uint32_t v, uint8_t noteNum, uint8_t velocity)
 { 
-  float freq, D, frac, decay, vel, n0, n1, lp, g, x, m_up;
-  uint32_t N0, N;
+  float freq, D, frac, decay, vel, n0, n1, lp, g, x, m_up, baseExc, delayed;
+  uint32_t N0, N, wp;
 
   freq = note2Freq_Hz(noteNum);
   if (freq < 1.0f){
@@ -156,6 +157,21 @@ static void noteOn(pqSynth_t* synth, uint32_t v, uint8_t noteNum, uint8_t veloci
   }
 #endif
 
+  st_KS.voice[v].pickOfs = N / KS_PICK_OFFSET_DIV;
+  if (st_KS.voice[v].pickOfs < 1){
+    st_KS.voice[v].pickOfs = 1;
+  }
+  if (st_KS.voice[v].pickOfs > KS_PICKBUF_SIZE){
+    st_KS.voice[v].pickOfs = KS_PICKBUF_SIZE;
+  }
+  st_KS.voice[v].pickWp = 0;
+  for (int i = 0; i < st_KS.voice[v].pickOfs; i++){
+    st_KS.voice[v].pickBuf[i] = 0.0f;
+  }
+
+  st_KS.voice[v].muteEnv = 1.0f;
+  st_KS.voice[v].muteLP = 0.0f;
+
   for (int i = 0; i < N; i++){
     n0 = rngF32Singed();
     n1 = rngF32Singed();
@@ -164,11 +180,17 @@ static void noteOn(pqSynth_t* synth, uint32_t v, uint8_t noteNum, uint8_t veloci
     lp += g * (x - lp);
     st_KS.delayLine[v][i] = lp * m_up;
 #else
-    st_KS.delayLine[v][i] = vel * 0.5f * (n0 + n1);
+    baseExc = vel * 0.5f * (n0 + n1);
+    wp = st_KS.voice[v].pickWp;
+    delayed = st_KS.voice[v].pickBuf[wp];
+    st_KS.voice[v].pickBuf[wp] = baseExc;
+    wp++;
+    if (wp >= st_KS.voice[v].pickOfs){
+      wp = 0;
+    }
+    st_KS.voice[v].pickWp = wp;
+    st_KS.delayLine[v][i] =  baseExc - (KS_PICK_MIX * delayed);
 #endif
-  }
-  for (int i = N; i < KS_MAX_DELAY_SAMPLES; i++){
-    st_KS.delayLine[v][i] = 0.0f;
   }
 }
 
@@ -205,7 +227,7 @@ static void preProc(pqSynth_t* synth, uint32_t frames)
 static void play(pqSynth_t* synth, uint32_t frames)
 {
   float* out;
-  float decay, a, b, filt, y, y_ap;
+  float decay, a, b, filt, y, y_ap, lp2, mix, step;
   pqSynth_KS_Voice_t* vState;
   uint32_t N, index, index1, index2, r2;
 
@@ -239,6 +261,21 @@ static void play(pqSynth_t* synth, uint32_t frames)
       if (vState->releasing){
         filt = 0.25f * (a + b) + 0.5f * vState->lastSample;
       }
+      if (st_KS.voice[v].muteEnv > 0.0f){
+        lp2 = st_KS.voice[v].muteLP;
+        lp2 += KS_MUTE_LP_ALPHA * (filt - lp2);
+        st_KS.voice[v].muteLP = lp2;
+
+        mix = KS_MUTE_MIX_MAX * st_KS.voice[v].muteEnv;
+        filt = (filt * (1.0f - mix)) + (lp2 * mix);
+
+        step = st_MuteEnvStep;
+        st_KS.voice[v].muteEnv -= step;
+        if (st_KS.voice[v].muteEnv < 0.0f){
+          st_KS.voice[v].muteEnv = 0.0f;
+        }
+      }
+
       y = filt * decay;
       vState->lastSample = filt;
       
@@ -287,6 +324,7 @@ void InitVCOKerplusStrong(pqSynth_t* synth)
   for (int v = 0; v <SYNTH_MAX_VOICE; v++){
     resetVoice(v);
   }
+  st_MuteEnvStep = 1.0f / (KS_MUTE_TIME_SEC * synth->sampleRate);
   
   module.name = "VCO_KS";
   module.play = play;

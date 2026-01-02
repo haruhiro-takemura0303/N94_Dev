@@ -12,7 +12,7 @@ pqSynth_DjCab_t st_DjCab = {
   .coef[1] = { 1.00370347f, -1.97088110f, 0.96768969f, -1.97088110f, 0.97139323f },
   .coef[2] = { 0.84717423f, -1.27877641f, 0.64500850f, -1.27877641f, 0.49218276f },
   .coef[3] = { 0.12746720f,  0.25493440f, 0.12746720f, -0.76787388f, 0.27774271f },
-  .coef[4] = { 0.12746720f,  0.25493440f, 0.12746720f, -0.76787388f, 0.27774271f },
+  //.coef[4] = { 0.12746720f,  0.25493440f, 0.12746720f, -0.76787388f, 0.27774271f },
   .state = {0}
 };
 
@@ -29,15 +29,10 @@ static inline float biquadProcDF2T(const pqSynth_DjCab_BiquadCoef_t* coef, pqSyn
 
 static void preProc(pqSynth_t* synth, uint32_t frames)
 {
+  
   for (int v = 0; v < SYNTH_MAX_VOICE; v++){
     if (synth->voices[v].noteEvPendFlg & st_DjCab.bitMask){
       synth->voices[v].noteEvPendFlg &= ~st_DjCab.bitMask;
-      if (synth->voices[v].velocity != 0){
-        for (int k = 0; k < DJCAB_NUM_OF_FILT; k++){
-          st_DjCab.state[v][k].z1 = 0.0f;
-          st_DjCab.state[v][k].z2 = 0.0f;
-        }
-      }
     }
   }
 }
@@ -47,19 +42,14 @@ static void play(pqSynth_t* synth, uint32_t frames)
   float* buf;
   float x;
   
-  for (int v = 0; v < SYNTH_MAX_VOICE; v++){
-    if (!synth->voices[v].activeFlg){
-      continue;
+  buf = &synth->mixBuf[0];
+  for (uint32_t i = 0; i < frames; i++){
+    x = buf[i];
+    for (int k = 0; k < DJCAB_NUM_OF_FILT; k++){
+      x = biquadProcDF2T(&st_DjCab.coef[k], &st_DjCab.state[k], x);
     }
-    buf = &synth->voiceBuf[v][0];
-    for (int i = 0; i < frames; i++){
-      x = buf[i];
-      for (int k = 0; k < DJCAB_NUM_OF_FILT; k++){
-        x = biquadProcDF2T(&st_DjCab.coef[k], &st_DjCab.state[v][k], x);
-      }
-      buf[i] = x * DJCAB_MAKEUP_GAIN;
-    }
-  } 
+    buf[i] = x * DJCAB_MAKEUP_GAIN;
+  }
 }
 
 void InitDjentCab(pqSynth_t* synth)
@@ -70,7 +60,7 @@ void InitDjentCab(pqSynth_t* synth)
   module.name = "Dj_CAB";
   module.play = play;
   module.preProc = preProc;
-  bitPtn = PQSynth_RegisterModule(&module);
+  bitPtn = PQSynth_RegisterPostMixModule(&module);
   if (bitPtn != 0xFFFFFFFF){
     st_DjCab.bitMask = bitPtn;
   }

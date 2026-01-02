@@ -214,9 +214,7 @@ void InitDualVcom(void)
 usbDcd_Status_t DualVcom_StartInTransfer(uint8_t comIdx, const void* buf, uint16_t len)
 {
   usbDcd_Status_t ret;
-  if (len > USB_CDC_DATAEP_MPS){
-    return USBD_BUFFER_OVER;
-  }
+
   ret = Usbd_Idle(USB_CDC0_DATAINEP_ADDR + (comIdx * 2));
   if (ret){
     return ret;

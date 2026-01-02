@@ -63,8 +63,8 @@ static void play(pqSynth_t* synth, uint32_t frames)
           amp = st_VCA.target[v];
         }
       } else {
-        amp -= st_VCA.stepOff;
-        if (amp < 0.0f){
+        amp = amp * st_VCA.relMult;
+        if (amp < st_VCA.relThres){
           amp = 0.0f;
         }
       }
@@ -81,7 +81,7 @@ void InitVCA(pqSynth_t* synth)
 {
   uint32_t bitPtn;
   pqSynth_Module_t module;
-  float attackSam, relSam;
+  float attackSam, relSam, relEps, relSamInv;
 
   module.name = "VCA";
   module.play = play;
@@ -91,11 +91,18 @@ void InitVCA(pqSynth_t* synth)
     st_VCA.bitMask = bitPtn;
   }
   attackSam = 0.005f * synth->sampleRate;
-  relSam = 0.005f * synth->sampleRate;
+  relSam = 0.030f * synth->sampleRate;
 
   st_VCA.stepOn = (attackSam > 1.0f) ? (synth->ampMax / attackSam) : synth->ampMax;
-  st_VCA.stepOff = (relSam > 1.0f) ? (synth->ampMax / relSam) : synth->ampMax;
+  relEps = 1.0e-4f;
+  if (relSam < 1.0f){
+    relSam = 1.0f;
+  }
+  relSamInv = 1.0f / relSam;
 
+  st_VCA.relMult = expf(logf(relEps) * relSamInv);
+  st_VCA.relThres = synth->ampMax * 1.0e-5f;
+  
   for (int v = 0; v < SYNTH_MAX_VOICE; v++){
     st_VCA.gate[v] = 0u;
     st_VCA.amp[v] = 0.0f;

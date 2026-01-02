@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>5</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -414,6 +414,11 @@
               <FileType>1</FileType>
               <FilePath>..\Development\app\src\midi_drv.c</FilePath>
             </File>
+            <File>
+              <FileName>vcom_audio_recoder.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\src\vcom_audio_recoder.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -453,6 +458,11 @@
               <FileName>dj_cab.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Development\app\powerQuad_synthsizer\src\dj_cab.c</FilePath>
+            </File>
+            <File>
+              <FileName>dj_gate.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\powerQuad_synthsizer\src\dj_gate.c</FilePath>
             </File>
           </Files>
         </Group>

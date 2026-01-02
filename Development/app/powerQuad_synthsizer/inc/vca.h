@@ -15,7 +15,8 @@ typedef struct{
   float amp[SYNTH_MAX_VOICE];
   float target[SYNTH_MAX_VOICE];
   float stepOn;
-  float stepOff;
+  float relMult;
+  float relThres;
 }pqSynth_VCA_t;
 
 void InitVCA(pqSynth_t* synth);

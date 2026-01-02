@@ -9,7 +9,7 @@
 
 #include "pq_synth.h"
 
-#define DJCAB_NUM_OF_FILT   5
+#define DJCAB_NUM_OF_FILT   4
 #define DJCAB_MAKEUP_GAIN (1.25f)
 
 typedef struct{
@@ -27,8 +27,9 @@ typedef struct{
 
 typedef struct{
   uint32_t bitMask;
+  uint32_t nrActiveVoices;
   const pqSynth_DjCab_BiquadCoef_t coef[DJCAB_NUM_OF_FILT];
-  pqSynth_DjCab_BiquadState_t state[SYNTH_MAX_VOICE][DJCAB_NUM_OF_FILT];
+  pqSynth_DjCab_BiquadState_t state[DJCAB_NUM_OF_FILT];
 } pqSynth_DjCab_t;
 
 void InitDjentCab(pqSynth_t* synth);

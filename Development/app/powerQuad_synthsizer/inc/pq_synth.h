@@ -12,6 +12,9 @@
 #include <cmsis_armclang.h>
 #include "fsl_powerquad.h"
 
+
+#define M_PI 3.14159265358979323846
+
 #define DEFAULT_FS              44100
 
 #define SYNTH_MAX_NUM           1
@@ -45,6 +48,11 @@ struct __pqsynth{
   uint32_t moduleBitMask;
   pqSynth_Voice_t voices[SYNTH_MAX_VOICE];
   float voiceBuf[SYNTH_MAX_VOICE][SYNTH_SAMPLE_BUF_SIZE];
+  float mixBuf[SYNTH_SAMPLE_BUF_SIZE];
+  uint8_t voiceModuleIds[SYNTH_MAX_MODULES];
+  uint8_t postModuleIds[SYNTH_MAX_MODULES];
+  uint8_t nrVoiceModules;
+  uint8_t nrPostModules;
   float gpWorkMem0[SYNTH_MAX_VOICE * SYNTH_SAMPLE_BUF_SIZE];
   float gpWorkMem1[SYNTH_MAX_VOICE * SYNTH_SAMPLE_BUF_SIZE];
   pqSynth_Module_t modules[SYNTH_MAX_MODULES];
@@ -52,6 +60,25 @@ struct __pqsynth{
 };
 
 void PQSynth_Init(void);
+void PQSynth_InitRecMode(void);
 uint32_t PQSynth_RegisterModule(pqSynth_Module_t* newModule);
+uint32_t PQSynth_RegisterPostMixModule(pqSynth_Module_t* newModule);
+
+
+// Debug (watch variables): DWT cycle counter based profiling
+extern volatile uint32_t g_pq_dbg_last_cycles;
+extern volatile uint32_t g_pq_dbg_max_cycles;
+extern volatile uint32_t g_pq_dbg_budget_cycles;
+extern volatile uint32_t g_pq_dbg_overrun_count;
+extern volatile uint32_t g_pq_dbg_last_nrFrames;
+
+extern volatile uint32_t g_pq_dbg_mod_pre_last[SYNTH_MAX_MODULES];
+extern volatile uint32_t g_pq_dbg_mod_pre_max[SYNTH_MAX_MODULES];
+extern volatile uint32_t g_pq_dbg_mod_play_last[SYNTH_MAX_MODULES];
+extern volatile uint32_t g_pq_dbg_mod_play_max[SYNTH_MAX_MODULES];
+extern volatile uint32_t g_pq_dbg_mod_total_last[SYNTH_MAX_MODULES];
+extern volatile uint32_t g_pq_dbg_mod_total_max[SYNTH_MAX_MODULES];
+extern volatile uint32_t g_pq_dbg_nrModules_last;
+extern volatile uint32_t g_pq_dbg_nrModules_max;
 
 #endif /*__PQ_SYNTH_H__*/
