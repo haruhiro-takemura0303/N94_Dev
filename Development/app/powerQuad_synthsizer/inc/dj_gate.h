@@ -28,6 +28,8 @@ typedef struct{
   uint32_t holdSam;
 } pqSynth_DjGate_t;
 
+extern pqSynth_DjGate_t st_DjGate;
+
 void InitDjentGate_Key(pqSynth_t* synth);
 void InitDjentGate_Apply(pqSynth_t* synth);
 

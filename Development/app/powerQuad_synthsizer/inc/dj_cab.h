@@ -9,7 +9,7 @@
 
 #include "pq_synth.h"
 
-#define DJCAB_NUM_OF_FILT   4
+#define DJCAB_NUM_OF_FILT   8
 #define DJCAB_MAKEUP_GAIN (1.25f)
 
 typedef struct{

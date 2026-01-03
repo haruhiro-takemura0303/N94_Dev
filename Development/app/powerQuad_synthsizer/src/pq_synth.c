@@ -17,6 +17,7 @@
 #include "dj_amp.h"
 #include "dj_cab.h"
 #include "dj_gate.h"
+#include "dj_vca.h"
 
 pqSynth_t st_Synth[SYNTH_MAX_NUM];
 
@@ -264,13 +265,15 @@ static void init(float samFreq, float ampCoef)
   /*Module Initialization*/
   //InitVCO();
   //InitVCOWaveTable(synth);
+  //InitVCA(synth);
+
+  /*Djent*/
   InitVCOKerplusStrong(synth);
   InitDjentGate_Key(synth);
   InitDjentAmp(synth);
-  InitDjentGate_Apply(synth);
+  //InitDjentGate_Apply(synth);
   InitDjentCab(synth);
-  //InitVCA(synth);
-  
+  InitDjentVCA(synth);
 }
 
 void PQSynth_Init(void)
@@ -330,9 +333,10 @@ void PQSynth_InitRecMode(void)
   synth->deviceIndex = 1;
   
   VcomRec_SetNoteOn(noteOn);
+	VcomRec_SetNoteOff(noteOff);
   VcomRec_SetPlayCallback(play);
 	
-	init(44100.0f, 0.5f / (float)SYNTH_MAX_VOICE);
+	init(44100.0f, 0.9f / (float)SYNTH_MAX_VOICE);
 }
 
 uint32_t PQSynth_RegisterModule(pqSynth_Module_t* newModule)

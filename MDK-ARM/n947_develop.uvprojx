@@ -464,6 +464,11 @@
               <FileType>1</FileType>
               <FilePath>..\Development\app\powerQuad_synthsizer\src\dj_gate.c</FilePath>
             </File>
+            <File>
+              <FileName>dj_vca.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\powerQuad_synthsizer\src\dj_vca.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
