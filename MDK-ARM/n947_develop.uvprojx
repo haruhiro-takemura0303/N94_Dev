@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities;.\NXP\frdmmcxn947_hello_world_cm33_core0\component;.\NXP\frdmmcxn947_hello_world_cm33_core0\board;.\NXP\frdmmcxn947_hello_world_cm33_core0\component\uart;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\debug_console_lite;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\str;..\Development\USBD\inc;..\Development\mikrobus\inc;..\Development\usbh\inc;..\Development\usb_common;.\NXP\frdmmcxn947_hello_world_cm33_core0\device;.\NXP\frdmmcxn947_hello_world_cm33_core0\device\periph;..\Development\flexspi\inc;..\Development\app\inc;..\Development\app\powerQuad_synthsizer\inc</IncludePath>
+              <IncludePath>.\NXP\frdmmcxn947_hello_world_cm33_core0\drivers;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities;.\NXP\frdmmcxn947_hello_world_cm33_core0\component;.\NXP\frdmmcxn947_hello_world_cm33_core0\board;.\NXP\frdmmcxn947_hello_world_cm33_core0\component\uart;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\debug_console_lite;.\NXP\frdmmcxn947_hello_world_cm33_core0\utilities\str;..\Development\usbd\inc;..\Development\mikrobus\inc;..\Development\usbh\inc;..\Development\usb_common;.\NXP\frdmmcxn947_hello_world_cm33_core0\device;.\NXP\frdmmcxn947_hello_world_cm33_core0\device\periph;..\Development\flexspi\inc;..\Development\app\inc;..\Development\app\powerQuad_synthsizer\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
