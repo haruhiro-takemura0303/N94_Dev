@@ -58,16 +58,16 @@ int main (void)
 	InitMidiDriver();
 
 	/*PowerQuad Synthesizer*/
-	//PQSynth_Init();
-	PQSynth_InitRecMode();
+	PQSynth_Init();
+	//PQSynth_InitRecMode();
 
 	/*USB Device*/
 	//InitVcomWriter();
-	InitVcomRecorder();
-	InitDualVcom();
+	//InitVcomRecorder();
+	//InitDualVcom();
 	
 	/*USB Host(Enhanced Host Controller Interface)*/
-	//InitEHCI();
+	InitEHCI();
 	
 	/*mikroBUS*/
 	InitMikroBUS();

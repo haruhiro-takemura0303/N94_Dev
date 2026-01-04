@@ -419,6 +419,11 @@
               <FileType>1</FileType>
               <FilePath>..\Development\app\src\vcom_audio_recoder.c</FilePath>
             </File>
+            <File>
+              <FileName>dwt_counter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Development\app\src\dwt_counter.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

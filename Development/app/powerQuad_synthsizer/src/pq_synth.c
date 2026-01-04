@@ -8,6 +8,8 @@
 #include "hcd_class_audio.h"
 #include "midi.h"
 
+#include "dwt_counter.h"
+
 #include "vcom_audio_recorder.h"
 
 #include "vco.h"
@@ -21,25 +23,6 @@
 
 pqSynth_t st_Synth[SYNTH_MAX_NUM];
 
-// Debug (watch variables): DWT cycle counter based profiling
-volatile uint32_t g_pq_dbg_last_cycles = 0;
-volatile uint32_t g_pq_dbg_max_cycles = 0;
-volatile uint32_t g_pq_dbg_budget_cycles = 0;
-volatile uint32_t g_pq_dbg_overrun_count = 0;
-volatile uint32_t g_pq_dbg_last_nrFrames = 0;
-
-// Per-module profiling (indexed by moduleID / registration order)
-volatile uint32_t g_pq_dbg_mod_pre_last[SYNTH_MAX_MODULES] = {0};
-volatile uint32_t g_pq_dbg_mod_pre_max[SYNTH_MAX_MODULES]  = {0};
-volatile uint32_t g_pq_dbg_mod_play_last[SYNTH_MAX_MODULES] = {0};
-volatile uint32_t g_pq_dbg_mod_play_max[SYNTH_MAX_MODULES]  = {0};
-volatile uint32_t g_pq_dbg_mod_total_last[SYNTH_MAX_MODULES] = {0};
-volatile uint32_t g_pq_dbg_mod_total_max[SYNTH_MAX_MODULES]  = {0};
-volatile uint32_t g_pq_dbg_nrModules_last = 0;
-volatile uint32_t g_pq_dbg_nrModules_max  = 0;
-
-
-
 static inline uint32_t disint(void) {
   uint32_t primask;
   __asm volatile ("MRS %0, primask" : "=r"(primask) :: "memory");
@@ -48,28 +31,6 @@ static inline uint32_t disint(void) {
 }
 static inline void enaint(uint32_t primask) {
   __asm volatile ("MSR primask, %0" :: "r"(primask) : "memory");
-}
-
-// --- DWT CYCCNT profiling (no printf; watch variables in debugger) ---
-#define PQ_DEMCR_ADDR   (0xE000EDFCu)
-#define PQ_DWT_CTRL_ADDR (0xE0001000u)
-#define PQ_DWT_CYCCNT_ADDR (0xE0001004u)
-#define PQ_DEMCR_TRCENA (1u << 24)
-#define PQ_DWT_CTRL_CYCCNTENA (1u << 0)
-
-static inline void pq_dwt_init(void)
-{
-  volatile uint32_t* demcr = (volatile uint32_t*)PQ_DEMCR_ADDR;
-  volatile uint32_t* dwt_ctrl = (volatile uint32_t*)PQ_DWT_CTRL_ADDR;
-  volatile uint32_t* dwt_cyccnt = (volatile uint32_t*)PQ_DWT_CYCCNT_ADDR;
-  *demcr |= PQ_DEMCR_TRCENA;
-  *dwt_cyccnt = 0;
-  *dwt_ctrl |= PQ_DWT_CTRL_CYCCNTENA;
-}
-
-static inline uint32_t pq_dwt_get(void)
-{
-  return *(volatile uint32_t*)PQ_DWT_CYCCNT_ADDR;
 }
 
 
@@ -112,35 +73,16 @@ static void play(uint8_t idx, uint32_t* buf, uint16_t nextTxSize)
     return;
   }
   
-  // DWT profiling start
-  uint32_t t0 = pq_dwt_get();
-  g_pq_dbg_last_nrFrames = nrFrames;
-  // budget cycles for this buffer (uses SystemCoreClock if available)
-  extern uint32_t SystemCoreClock;
-  g_pq_dbg_budget_cycles = (uint32_t)(((uint64_t)nrFrames * (uint64_t)SystemCoreClock) / (uint64_t)DEFAULT_FS);
+  DwtCounter_SetLimit((uint32_t)(((uint64_t)nrFrames * (uint64_t)SystemCoreClock) / (uint64_t)DEFAULT_FS));
+  DwtCounter_Hook();
   
   
-  // Per-module profiling (watch variables, no printf)
-  g_pq_dbg_nrModules_last = synth->nrModules;
-  if (g_pq_dbg_nrModules_last > g_pq_dbg_nrModules_max){
-    g_pq_dbg_nrModules_max = g_pq_dbg_nrModules_last;
-  }
   for (int mi = 0; mi < synth->nrVoiceModules; mi++){
     i = synth->voiceModuleIds[mi];
-    uint32_t mp0 = pq_dwt_get();
     synth->modules[i].preProc(synth, nrFrames);
-    uint32_t mp1 = pq_dwt_get();
+    DwtCounter_Lap();
     synth->modules[i].play(synth, nrFrames);
-    uint32_t mp2 = pq_dwt_get();
-    uint32_t c_pre = (mp1 - mp0);
-    uint32_t c_play = (mp2 - mp1);
-    uint32_t c_total = (mp2 - mp0);
-    g_pq_dbg_mod_pre_last[i] = c_pre;
-    g_pq_dbg_mod_play_last[i] = c_play;
-    g_pq_dbg_mod_total_last[i] = c_total;
-    if (c_pre > g_pq_dbg_mod_pre_max[i]){ g_pq_dbg_mod_pre_max[i] = c_pre; }
-    if (c_play > g_pq_dbg_mod_play_max[i]){ g_pq_dbg_mod_play_max[i] = c_play; }
-    if (c_total > g_pq_dbg_mod_total_max[i]){ g_pq_dbg_mod_total_max[i] = c_total; }
+    DwtCounter_Lap();
   }
   
   for (uint32_t i = 0; i < nrFrames; i++){
@@ -155,20 +97,10 @@ static void play(uint8_t idx, uint32_t* buf, uint16_t nextTxSize)
   
   for (int mi = 0; mi < synth->nrPostModules; mi++){
     i = synth->postModuleIds[mi];
-    uint32_t mp0 = pq_dwt_get();
     synth->modules[i].preProc(synth, nrFrames);
-    uint32_t mp1 = pq_dwt_get();
+    DwtCounter_Lap();
     synth->modules[i].play(synth, nrFrames);
-    uint32_t mp2 = pq_dwt_get();
-    uint32_t c_pre = (mp1 - mp0);
-    uint32_t c_play = (mp2 - mp1);
-    uint32_t c_total = (mp2 - mp0);
-    g_pq_dbg_mod_pre_last[i] = c_pre;
-    g_pq_dbg_mod_play_last[i] = c_play;
-    g_pq_dbg_mod_total_last[i] = c_total;
-    if (c_pre > g_pq_dbg_mod_pre_max[i]){ g_pq_dbg_mod_pre_max[i] = c_pre; }
-    if (c_play > g_pq_dbg_mod_play_max[i]){ g_pq_dbg_mod_play_max[i] = c_play; }
-    if (c_total > g_pq_dbg_mod_total_max[i]){ g_pq_dbg_mod_total_max[i] = c_total; }
+    DwtCounter_Lap();
   }
   
   s16Out = (int16_t*)buf;
@@ -184,17 +116,7 @@ static void play(uint8_t idx, uint32_t* buf, uint16_t nextTxSize)
     s16Out[i * 2u + 0u] = s16Val;
     s16Out[i * 2u + 1u] = s16Val;
   }
-  
-  // DWT profiling end
-  uint32_t t1 = pq_dwt_get();
-  g_pq_dbg_last_cycles = (t1 - t0);
-  if (g_pq_dbg_last_cycles > g_pq_dbg_max_cycles){
-    g_pq_dbg_max_cycles = g_pq_dbg_last_cycles;
-  }
-  if (g_pq_dbg_last_cycles > g_pq_dbg_budget_cycles){
-    g_pq_dbg_overrun_count++;
-  }
-  
+  DwtCounter_End();
 }
 
 static int allocateVoice(pqSynth_t* synth)
@@ -261,7 +183,9 @@ static void init(float samFreq, float ampCoef)
   synth->nrModules = 0;
   synth->nrVoiceModules = 0;
   synth->nrPostModules = 0;
-  
+ 
+  DwtCounter_Init();
+
   /*Module Initialization*/
   //InitVCO();
   //InitVCOWaveTable(synth);
@@ -277,25 +201,7 @@ static void init(float samFreq, float ampCoef)
 }
 
 void PQSynth_Init(void)
-{
-  pq_dwt_init();
-  g_pq_dbg_last_cycles = 0;
-  g_pq_dbg_max_cycles = 0;
-  g_pq_dbg_budget_cycles = 0;
-  g_pq_dbg_overrun_count = 0;
-  g_pq_dbg_last_nrFrames = 0;
-  g_pq_dbg_nrModules_last = 0;
-  g_pq_dbg_nrModules_max = 0;
-  for (int i = 0; i < SYNTH_MAX_MODULES; i++){
-    g_pq_dbg_mod_pre_last[i] = 0;
-    g_pq_dbg_mod_pre_max[i] = 0;
-    g_pq_dbg_mod_play_last[i] = 0;
-    g_pq_dbg_mod_play_max[i] = 0;
-    g_pq_dbg_mod_total_last[i] = 0;
-    g_pq_dbg_mod_total_max[i] = 0;
-  }
-  
-  
+{ 
   PQ_Init(POWERQUAD);
   
 	/*USB Host Callback*/
@@ -310,22 +216,6 @@ void PQSynth_Init(void)
 
 void PQSynth_InitRecMode(void)
 {
-  pq_dwt_init();
-  g_pq_dbg_last_cycles = 0;
-  g_pq_dbg_max_cycles = 0;
-  g_pq_dbg_budget_cycles = 0;
-  g_pq_dbg_overrun_count = 0;
-  g_pq_dbg_last_nrFrames = 0;
-  g_pq_dbg_nrModules_last = 0;
-  g_pq_dbg_nrModules_max = 0;
-  for (int i = 0; i < SYNTH_MAX_MODULES; i++){
-    g_pq_dbg_mod_pre_last[i] = 0;
-    g_pq_dbg_mod_pre_max[i] = 0;
-    g_pq_dbg_mod_play_last[i] = 0;
-    g_pq_dbg_mod_play_max[i] = 0;
-    g_pq_dbg_mod_total_last[i] = 0;
-    g_pq_dbg_mod_total_max[i] = 0;
-  }
   PQ_Init(POWERQUAD);
   
 	pqSynth_t* synth = &st_Synth[0];

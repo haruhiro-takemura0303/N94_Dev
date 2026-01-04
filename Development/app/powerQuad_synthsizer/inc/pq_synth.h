@@ -64,21 +64,4 @@ void PQSynth_InitRecMode(void);
 uint32_t PQSynth_RegisterModule(pqSynth_Module_t* newModule);
 uint32_t PQSynth_RegisterPostMixModule(pqSynth_Module_t* newModule);
 
-
-// Debug (watch variables): DWT cycle counter based profiling
-extern volatile uint32_t g_pq_dbg_last_cycles;
-extern volatile uint32_t g_pq_dbg_max_cycles;
-extern volatile uint32_t g_pq_dbg_budget_cycles;
-extern volatile uint32_t g_pq_dbg_overrun_count;
-extern volatile uint32_t g_pq_dbg_last_nrFrames;
-
-extern volatile uint32_t g_pq_dbg_mod_pre_last[SYNTH_MAX_MODULES];
-extern volatile uint32_t g_pq_dbg_mod_pre_max[SYNTH_MAX_MODULES];
-extern volatile uint32_t g_pq_dbg_mod_play_last[SYNTH_MAX_MODULES];
-extern volatile uint32_t g_pq_dbg_mod_play_max[SYNTH_MAX_MODULES];
-extern volatile uint32_t g_pq_dbg_mod_total_last[SYNTH_MAX_MODULES];
-extern volatile uint32_t g_pq_dbg_mod_total_max[SYNTH_MAX_MODULES];
-extern volatile uint32_t g_pq_dbg_nrModules_last;
-extern volatile uint32_t g_pq_dbg_nrModules_max;
-
 #endif /*__PQ_SYNTH_H__*/
